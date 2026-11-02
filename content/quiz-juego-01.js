@@ -29,18 +29,18 @@
             "Porque los jobs con delay pasan siempre primero."
           ],
           answer: 1,
-          why: "moveToActive-11.lua hace RPOPLPUSH sobre wait. Solo cuando wait queda vacía consulta el ZSET prioritized con ZPOPMIN. La prioridad no salta la cola."
+          why: "moveToActive-11.lua hace RPOPLPUSH sobre wait. Solo cuando wait queda vacía consulta el ZSET prioritized con ZPOPMIN. Por eso un priority 0 (sin prioridad) sale antes que un priority 1: la prioridad no salta la cola."
         },
         {
           id: "score-priority",
           prompt: "otp-alta es el primer job priorizado de la oleada. ¿Qué score recibe en el ZSET prioritized?",
           options: [
-            "4294967296  (1 × 232 + 0)",
-            "4294967298  (1 × 232 + 2)",
-            "4294967297  (1 × 232 + 1)"
+            "4294967296  (1 × 2³² + 0)",
+            "4294967298  (1 × 2³² + 2)",
+            "4294967297  (1 × 2³² + 1)"
           ],
           answer: 2,
-          why: "getPriorityScore.lua calcula priority × 232 + contador global. El contador empieza en 1 y desempata por FIFO dentro de la misma prioridad."
+          why: "getPriorityScore.lua calcula priority × 2³² + contador global. El contador empieza en 1 y desempata por FIFO dentro de la misma prioridad."
         }
       ]
     },
@@ -68,6 +68,17 @@
           ],
           answer: 2,
           why: "getDelayedScore.lua usa timestamp × 4096 + offset. El offset empieza en 0 dentro de cada bucket de timestamp y conserva el FIFO."
+        },
+        {
+          id: "orden-zset",
+          prompt: "En prioritized coinciden reauth-token (priority 1), alerta-stock (priority 5) y backup-nocturno (priority 10). ¿En qué orden salen con ZPOPMIN?",
+          options: [
+            "reauth-token (1) → alerta-stock (5) → backup-nocturno (10).",
+            "backup-nocturno (10) → alerta-stock (5) → reauth-token (1).",
+            "Da igual el número: desempata el orden de llegada."
+          ],
+          answer: 0,
+          why: "El score es priority × 2³² + contador y ZPOPMIN saca el MENOR score: menor número = más prioridad. 1 va antes que 5, y 10 es la más lenta. El contador solo desempata jobs con la misma prioridad."
         }
       ]
     },

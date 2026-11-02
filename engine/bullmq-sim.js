@@ -42,7 +42,8 @@
    * Zona de entrada según addStandardJob / addPrioritizedJob / addDelayedJob.
    *   delay > 0            → delayed (aunque tenga priority)
    *   priority > 0         → prioritized
-   *   priority === 0       → wait  ("sin prioridad", no "máxima prioridad")
+   *   priority === 0       → wait  ("sin prioridad"; sale antes que prioritized
+   *                                 porque wait se drena entero primero)
    */
   function zoneFor(spec) {
     spec = spec || {};

@@ -634,7 +634,7 @@
         <div class="rule-row" id="rule-delay"><span class="dot delay"></span><span><code>delay &gt; 0</code></span><span class="arrow">→ delayed</span></div>
         <div class="rule-row" id="rule-prio"><span class="dot prio"></span><span><code>priority &gt; 0</code></span><span class="arrow">→ prioritized</span></div>
         <div class="rule-row" id="rule-wait"><span class="dot wait"></span><span>resto</span><span class="arrow">→ wait</span></div>
-        <p class="note" style="margin-top:7px;margin-bottom:0"><b>priority: 0</b> significa <em>sin prioridad</em>, no máxima. La LIST <code>wait</code> se drena entera antes del ZSET.</p>
+        <p class="note" style="margin-top:7px;margin-bottom:0"><b>priority: 0</b> = <em>sin prioridad</em> → va a <code>wait</code>. Como <code>wait</code> se drena entera antes del ZSET, esos jobs salen <b>antes</b> que los priorizados. Dentro de <code>prioritized</code>, <b>menor número = más prioridad</b>: <code>1</code> &gt; <code>5</code> &gt; <code>10</code>.</p>
       </section>
 
       <section class="panel">
@@ -688,8 +688,8 @@
       <button id="btnGlossaryClose" class="sm" aria-label="Cerrar glosario">Cerrar ✕</button>
     </div>
     <div class="glossary-grid">
-      <div class="glossary-term" id="glossary-wait"><b>LIST <code>wait</code></b><p>Cola FIFO de jobs sin prioridad ni delay. <code>addStandardJob</code> hace <code>LPUSH</code>; el worker saca por el otro extremo con <code>RPOPLPUSH</code>.</p></div>
-      <div class="glossary-term" id="glossary-prio"><b>ZSET <code>prioritized</code></b><p>Jobs con <code>priority &gt; 0</code>. El score es <code>priority × 2³² + contador</code>; el menor score sale primero con <code>ZPOPMIN</code>.</p></div>
+      <div class="glossary-term" id="glossary-wait"><b>LIST <code>wait</code></b><p>Cola FIFO de jobs sin prioridad ni delay (<code>priority: 0</code>). <code>addStandardJob</code> hace <code>LPUSH</code>; el worker saca por el otro extremo con <code>RPOPLPUSH</code>. Se drena <b>entera</b> antes de mirar <code>prioritized</code>, así que un <code>priority 0</code> adelanta a cualquier job priorizado.</p></div>
+      <div class="glossary-term" id="glossary-prio"><b>ZSET <code>prioritized</code></b><p>Jobs con <code>priority &gt; 0</code> (rango <code>1</code>–<code>2 097 151</code>). El score es <code>priority × 2³² + contador</code>; el <b>menor score</b> sale primero con <code>ZPOPMIN</code>, así que <b>menor número = más prioridad</b>: <code>1</code> antes que <code>5</code>, y <code>10</code> de las más lentas. Un <code>priority 0</code> no entra aquí: va a <code>wait</code> y sale antes que todos.</p></div>
       <div class="glossary-term" id="glossary-delayed"><b>ZSET <code>delayed</code></b><p>Jobs con <code>delay &gt; 0</code>. El score es <code>timestamp × 4096 + offset</code>. No compiten hasta que <code>promoteDelayedJobs</code> los mueve.</p></div>
       <div class="glossary-term" id="glossary-fifo"><b>FIFO antes que prioridad</b><p><code>moveToActive-11.lua</code> drena toda la LIST <code>wait</code> antes de consultar <code>prioritized</code>. Un job con prioridad no adelanta a los que ya están en <code>wait</code>.</p></div>
       <div class="glossary-term" id="glossary-lock"><b>Lock y stalled</b><p>El worker toma el job con un lock temporal. Si el processor se bloquea y el lock expira, <code>moveStalledJobsToWait-9.lua</code> lo devuelve a <code>wait</code> o lo marca <code>failed</code>.</p></div>
@@ -698,8 +698,8 @@
     <div class="glossary-links">
       <b>Fuentes:</b>
       <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/moveToActive-11.lua" target="_blank" rel="noopener">moveToActive-11.lua</a>
-      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/getPriorityScore.lua" target="_blank" rel="noopener">getPriorityScore.lua</a>
-      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/getDelayedScore.lua" target="_blank" rel="noopener">getDelayedScore.lua</a>
+      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/includes/getPriorityScore.lua" target="_blank" rel="noopener">getPriorityScore.lua</a>
+      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/includes/getDelayedScore.lua" target="_blank" rel="noopener">getDelayedScore.lua</a>
       <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/moveStalledJobsToWait-9.lua" target="_blank" rel="noopener">moveStalledJobsToWait-9.lua</a>
     </div>
   </div>
@@ -2424,7 +2424,7 @@
     if (expected === "prioritized") {
       return "tiene priority " + spec.priority + " (> 0): va al ZSET prioritized.";
     }
-    return "tiene priority 0 y delay 0: va a la LIST wait. priority 0 significa SIN prioridad.";
+    return "tiene priority 0 y delay 0: va a la LIST wait y se procesa antes que los priorizados (wait se drena entera primero).";
   }
 
   function tryPlace(uid, zone) {
@@ -2849,8 +2849,8 @@
         "<h2>Tres estructuras.<br>Un orden que <em>no</em> esperas.</h2>" +
         '<p class="ov-lede">BullMQ no guarda los jobs en una sola cola. Usa una LIST y dos ZSET, y <code>moveToActive-11.lua</code> tiene una regla que rompe la intuición:</p>' +
         '<div class="rule-grid">' +
-          '<div class="rule"><div class="rh"><span class="rk">wait</span><span class="rt">LIST</span></div><p><code>priority: 0</code> y sin delay. Se drena <b>entera</b> antes de mirar el ZSET.</p></div>' +
-          '<div class="rule"><div class="rh"><span class="rk">prioritized</span><span class="rt">ZSET</span></div><p><code>priority &gt; 0</code>. Score <code>priority × 2³² + contador</code>.</p></div>' +
+          '<div class="rule"><div class="rh"><span class="rk">wait</span><span class="rt">LIST</span></div><p><code>priority: 0</code> y sin delay. Se drena <b>entera</b> antes de mirar el ZSET: esos jobs se procesan <b>primero</b>.</p></div>' +
+          '<div class="rule"><div class="rh"><span class="rk">prioritized</span><span class="rt">ZSET</span></div><p><code>priority &gt; 0</code>. Score <code>priority × 2³² + contador</code>; <b>menor número = más prioridad</b> (<code>1</code> &gt; <code>5</code> &gt; <code>10</code>).</p></div>' +
           '<div class="rule"><div class="rh"><span class="rk">delayed</span><span class="rt">ZSET</span></div><p><code>delay &gt; 0</code>. Score <code>timestamp × 4096 + offset</code>.</p></div>' +
         "</div>" +
         '<div class="ov-callout"><b>Cómo se juega:</b> arrastra (o toca) cada contenedor a su estructura. Después haz clic en los contenedores colocados para predecir el orden de procesamiento. Por último, <b>Zarpar</b>. Acierta la zona y la predicción; tienes 3 vidas. Si los jobs de <code>wait</code> conservan su orden de llegada, ganas <b>+100 de integridad FIFO</b>.</div>' +
@@ -3046,8 +3046,8 @@
           '<div class="ov-stat"><div class="v">3/3</div><div class="l">oleadas</div></div>' +
         "</div>" +
         '<div class="lesson"><b>Las tres reglas del puerto:</b><ul>' +
-          "<li><code>priority: 0</code> no es máxima prioridad: es <b>sin prioridad</b> y va a la LIST <code>wait</code>.</li>" +
-          "<li><code>wait</code> se drena <b>entera</b> antes de consultar el ZSET <code>prioritized</code>. La prioridad solo ordena dentro del ZSET.</li>" +
+          "<li><code>priority: 0</code> es <b>sin prioridad</b> y va a la LIST <code>wait</code>; como <code>wait</code> se drena entera, se procesa <b>antes</b> que los priorizados.</li>" +
+          "<li><code>wait</code> se drena <b>entera</b> antes de consultar el ZSET <code>prioritized</code>. Dentro del ZSET, <b>menor número = más prioridad</b>: <code>1</code> &gt; <code>5</code> &gt; <code>10</code>.</li>" +
           "<li><code>delayed</code> es un ZSET con timestamp. Al promover, si el job tiene priority recibe un score nuevo.</li>" +
         "</ul></div>" +
         '<div class="ov-actions">' +

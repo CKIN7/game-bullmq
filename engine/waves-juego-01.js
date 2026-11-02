@@ -28,7 +28,7 @@
         { id: "4", name: "webhook-limpieza", priority: 0, delay: 4000, work: 1200 },
         { id: "5", name: "factura-urgente", priority: 1, delay: 0, work: 600 }
       ],
-      lesson: "factura-urgente (priority 1) se procesó DESPUÉS de email-bienvenida y reporte-diario (priority 0). No es un bug: moveToActive-11.lua drena la LIST wait completa con RPOPLPUSH antes de tocar el ZSET con ZPOPMIN. La prioridad no salta la cola."
+      lesson: "factura-urgente (priority 1) se procesó DESPUÉS de email-bienvenida y reporte-diario (priority 0). No es un bug: moveToActive-11.lua drena la LIST wait completa con RPOPLPUSH antes de tocar el ZSET con ZPOPMIN. La prioridad no salta la cola. Un priority 0 es «sin prioridad», pero como wait se vacía entera primero, esos jobs salen antes que los priorizados."
     },
     {
       name: "Dos relojes",
@@ -41,7 +41,7 @@
         { id: "6", name: "backup-nocturno", priority: 10, delay: 0, work: 700 },
         { id: "7", name: "purga-cache", priority: 0, delay: 0, work: 400 }
       ],
-      lesson: "sync-crm nació delayed: no está ni en wait ni en prioritized hasta que promoteDelayedJobs lo mueve. Si el job promovido tiene priority > 0, recibe un score NUEVO en el ZSET: el contador de delayed no se conserva."
+      lesson: "sync-crm nació delayed: no está ni en wait ni en prioritized hasta que promoteDelayedJobs lo mueve. Si el job promovido tiene priority > 0, recibe un score NUEVO en el ZSET: el contador de delayed no se conserva. Y dentro de prioritized, menor número = más prioridad: reauth-token (p1) salió antes que alerta-stock (p5) y que backup-nocturno (p10)."
     },
     {
       name: "La trampa del ZSET",
