@@ -223,6 +223,15 @@ console.log("\n[8] Casos límite del motor");
     assert.strictEqual(queue.prioritized.length, 0);
     assert.strictEqual(queue.wait.length, 0);
   });
+
+  check("en prioritized gana el menor score: p1 antes que p5 antes que p10", () => {
+    const queue = new Engine({ concurrency: 1 });
+    queue.addJob({ id: "p10", priority: 10, delay: 0, work: 100 });
+    queue.addJob({ id: "p1", priority: 1, delay: 0, work: 100 });
+    queue.addJob({ id: "p5", priority: 5, delay: 0, work: 100 });
+    queue.runToIdle();
+    assert.strictEqual(queue.processingOrder.join(","), "p1,p5,p10");
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -260,6 +269,13 @@ console.log("\n[9] Banco de preguntas del aula (content/quiz-juego-01.js)");
 
   check("cada paquete declara cuántos puntos vale el reto", () => {
     assert.strictEqual(QUIZ_POINTS, 50);
+  });
+
+  check("la oleada 2 enseña que menor número = más prioridad", () => {
+    const text = QUIZ[1].questions
+      .map((q) => q.prompt + " " + q.options.join(" ") + " " + q.why)
+      .join(" ");
+    assert.ok(text.includes("menor número = más prioridad"), "falta la regla 1 > 5 > 10");
   });
 }
 
@@ -308,6 +324,29 @@ console.log("\n[10] Mapa de componentes (juego-01-el-puerto-de-redis.html)");
     assert.ok(html.includes("function captureEngineFlow"));
     assert.ok(html.includes("function drawFlow"));
     assert.ok(html.includes("G.lastFocusEvent"));
+  });
+
+  check("el aula ya no presenta priority 0 como 'no máxima'", () => {
+    assert.ok(!html.includes("no máxima"), "queda 'no máxima'");
+    assert.ok(!html.includes("no es máxima"), "queda 'no es máxima'");
+  });
+
+  check("el aula enseña que menor número = más prioridad", () => {
+    assert.ok(html.includes("menor número = más prioridad"), "falta la regla en el HTML");
+    assert.ok(html.includes("wait</code> y sale antes"), "el glosario no aclara que 0 sale antes");
+  });
+
+  check("las fuentes del glosario apuntan a includes/", () => {
+    assert.ok(html.includes("includes/getPriorityScore.lua"), "getPriorityScore sin includes/");
+    assert.ok(html.includes("includes/getDelayedScore.lua"), "getDelayedScore sin includes/");
+  });
+
+  check("el banco de preguntas usa el exponente (2³²), no el texto '232'", () => {
+    const quizSrc = fs.readFileSync(
+      path.join(__dirname, "content/quiz-juego-01.js"),
+      "utf8"
+    );
+    assert.ok(!quizSrc.includes("× 232"), "queda × 232 en el quiz");
   });
 }
 
