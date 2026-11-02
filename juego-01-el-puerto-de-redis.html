@@ -30,7 +30,64 @@
     --r:14px;
     --sh:0 2px 8px rgba(0,0,0,.04);
     --sh2:0 4px 16px -2px rgba(0,0,0,.06);
+    --surface:#ffffff;
+    --surface-2:#fdfcfa;
+    --surface-3:#faf8f4;
+    --surface-4:#f5f3ee;
+    --paper:#fffdf8;
+    --focus:#fff6ee;
+    --kbd:#ffffff;
+    --primary-hover:#285c4d;
+    --toast-bad:#a4535a;
+    --arch-edge:#c7c1b3;
+    --arch-edge-label:#8a8578;
+    --arch-node-line:#dcd6c8;
+    --arch-node-hot:#fff4ea;
+    --arch-node-hot-ink:#a45f2c;
+    --arch-node-hover:#fdf4e8;
+    --primary-line:rgba(47,111,94,.30);
+    --primary-line-soft:rgba(47,111,94,.18);
+    --danger-line:rgba(176,99,103,.30);
   }
+  [data-theme="dark"]{
+    --bg:#0d1117;
+    --card:#161c24;
+    --line:#2a323d;
+    --line-soft:#222a34;
+    --ink:#e8ecf3;
+    --ink2:#b7c0cd;
+    --muted:#98a2b3;
+    --primary:#4fbfa0;
+    --primary-soft:rgba(79,191,160,.13);
+    --accent:#e0935a;
+    --accent-soft:rgba(224,147,90,.15);
+    --danger:#d98a8f;
+    --danger-soft:rgba(217,138,143,.15);
+    --slate:#8fb0c0;
+    --slate-soft:rgba(143,176,192,.15);
+    --sh:0 2px 8px rgba(0,0,0,.35);
+    --sh2:0 6px 22px -2px rgba(0,0,0,.5);
+    --surface:#161c24;
+    --surface-2:#1b222b;
+    --surface-3:#12171e;
+    --surface-4:#1b222b;
+    --paper:#1b222b;
+    --focus:#241d17;
+    --kbd:#232b36;
+    --primary-hover:#3da88a;
+    --toast-bad:#a4535a;
+    --arch-edge:#3a4250;
+    --arch-edge-label:#9aa3b2;
+    --arch-node-line:#333c48;
+    --arch-node-hot:#2b2119;
+    --arch-node-hot-ink:#f0b27a;
+    --arch-node-hover:#241f18;
+    --primary-line:rgba(79,191,160,.38);
+    --primary-line-soft:rgba(79,191,160,.26);
+    --danger-line:rgba(217,138,143,.38);
+  }
+  html{transition:background .25s ease}
+  body{transition:background .25s ease,color .25s ease}
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
@@ -43,7 +100,7 @@
     display:inline-flex;align-items:center;gap:7px;
     font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
     color:var(--primary);background:var(--primary-soft);
-    border:1px solid rgba(47,111,94,.18);border-radius:999px;padding:4px 11px;
+    border:1px solid var(--primary-line-soft);border-radius:999px;padding:4px 11px;
   }
   .topbar{
     display:flex;align-items:flex-end;justify-content:space-between;
@@ -76,7 +133,7 @@
   }
   .board-head{
     display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-    padding:12px 16px;border-bottom:1px solid var(--line);background:#fdfcfa;
+    padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);
   }
   .board-title{
     display:flex;align-items:center;gap:9px;
@@ -96,23 +153,23 @@
   button:hover:not(:disabled){border-color:var(--primary);color:var(--primary);transform:translateY(-1px)}
   button:disabled{opacity:.42;cursor:not-allowed;transform:none}
   button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-  button.primary:hover:not(:disabled){background:#285c4d;color:#fff}
+  button.primary:hover:not(:disabled){background:var(--primary-hover);color:#fff}
   button.sm{padding:5px 9px;font-size:12px}
   select{
-    font-family:var(--mono);font-size:11.5px;color:var(--ink);background:#fff;
+    font-family:var(--mono);font-size:11.5px;color:var(--ink);background:var(--surface);
     border:1px solid var(--line);border-radius:8px;padding:6px 8px;
   }
   select:focus,button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
-  .canvas-wrap{position:relative;background:#faf8f4}
+  .canvas-wrap{position:relative;background:var(--surface-3)}
   canvas{display:block;width:100%;touch-action:none}
   .board-foot{
     display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
     padding:9px 16px;border-top:1px solid var(--line);
-    background:#fdfcfa;color:var(--muted);font-size:12px;
+    background:var(--surface-2);color:var(--muted);font-size:12px;
   }
   .board-foot kbd{
     font-family:var(--mono);font-size:10px;border:1px solid var(--line);
-    border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;color:var(--ink2);
+    border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--kbd);color:var(--ink2);
   }
   .side{display:flex;flex-direction:column;gap:12px;min-width:0}
   .panel{
@@ -123,11 +180,11 @@
   .panel h3{margin:0;font-size:14px;font-weight:600;letter-spacing:-.005em}
   .badge{
     font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;
-    color:var(--muted);background:#faf8f4;border:1px solid var(--line);
+    color:var(--muted);background:var(--surface-3);border:1px solid var(--line);
     border-radius:5px;padding:2px 6px;white-space:nowrap;
   }
-  .badge.ok{color:var(--primary);border-color:rgba(47,111,94,.3);background:var(--primary-soft)}
-  .badge.bad{color:var(--danger);border-color:rgba(176,99,103,.3);background:var(--danger-soft)}
+  .badge.ok{color:var(--primary);border-color:var(--primary-line);background:var(--primary-soft)}
+  .badge.bad{color:var(--danger);border-color:var(--danger-line);background:var(--danger-soft)}
   .note{margin:0 0 9px;color:var(--muted);font-size:12px;line-height:1.45}
   .rule-row{
     display:grid;grid-template-columns:9px 1fr auto;gap:8px;align-items:center;
@@ -140,7 +197,7 @@
   .dot.prio{background:var(--accent)}
   .dot.delay{background:var(--slate)}
   code{
-    font-family:var(--mono);font-size:.87em;background:#faf8f4;
+    font-family:var(--mono);font-size:.87em;background:var(--surface-3);
     border:1px solid var(--line-soft);border-radius:4px;padding:1px 4px;color:var(--ink);
   }
   .pred-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:4px}
@@ -148,7 +205,7 @@
     display:flex;gap:8px;align-items:center;padding:4px 7px;min-height:28px;
     border:1px dashed var(--line);border-radius:7px;font-size:11.5px;
   }
-  .pred-list li.filled{border-style:solid;background:#fdfcfa;cursor:pointer}
+  .pred-list li.filled{border-style:solid;background:var(--surface-2);cursor:pointer}
   .pred-list li.filled:hover{border-color:var(--danger);background:var(--danger-soft)}
   .pred-list li .n{
     width:19px;height:19px;border-radius:50%;background:var(--line-soft);
@@ -214,7 +271,7 @@
   .ov-card h2 em{font-style:italic;color:var(--primary)}
   .ov-lede{margin:0 0 14px;color:var(--ink2);font-size:14px;line-height:1.55}
   .rule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0}
-  .rule{border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fdfcfa}
+  .rule{border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:var(--surface-2)}
   .rh{display:flex;justify-content:space-between;align-items:center;gap:6px}
   .rk{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
   .rt{
@@ -223,14 +280,14 @@
   }
   .rule p{margin:6px 0 0;font-size:11.5px;color:var(--ink2);line-height:1.42}
   .ov-callout{
-    background:var(--primary-soft);border:1px solid rgba(47,111,94,.18);
+    background:var(--primary-soft);border:1px solid var(--primary-line-soft);
     border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--ink2);
     margin:13px 0 16px;line-height:1.5;
   }
   .ov-callout b{color:var(--ink)}
   .big{width:100%;padding:11px 16px;font-size:14.5px}
   .ov-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:14px 0}
-  .ov-stat{background:#fdfcfa;border:1px solid var(--line);border-radius:9px;padding:8px 9px}
+  .ov-stat{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:8px 9px}
   .ov-stat .v{font-family:var(--mono);font-size:19px;line-height:1.15;color:var(--ink)}
   .ov-stat .l{
     font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;
@@ -244,16 +301,16 @@
   .order{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
   .order li{
     display:flex;gap:7px;align-items:center;font-size:11.5px;
-    border:1px solid var(--line);border-radius:6px;padding:4px 7px;background:#fff;
+    border:1px solid var(--line);border-radius:6px;padding:4px 7px;background:var(--surface);
   }
   .order li .n{
     width:18px;height:18px;border-radius:50%;background:var(--line-soft);
     display:grid;place-items:center;font-family:var(--mono);font-size:9px;
     color:var(--muted);flex:none;
   }
-  .order li.ok{border-color:rgba(47,111,94,.35);background:var(--primary-soft)}
+  .order li.ok{border-color:var(--primary-line);background:var(--primary-soft)}
   .order li.ok .n{background:var(--primary);color:#fff}
-  .order li.miss{border-color:rgba(176,99,103,.32);background:var(--danger-soft);color:var(--danger)}
+  .order li.miss{border-color:var(--danger-line);background:var(--danger-soft);color:var(--danger)}
   .order li.miss .n{background:var(--danger);color:#fff}
   .breakdown{list-style:none;margin:12px 0;padding:0;font-size:12px}
   .breakdown li{
@@ -289,7 +346,7 @@
   }
   .toast.show{opacity:1;transform:translate(-50%,0)}
   .toast.ok{background:var(--primary)}
-  .toast.bad{background:#a4535a}
+  .toast.bad{background:var(--toast-bad)}
   .toast.info{background:var(--ink2)}
 
   .hidden{display:none !important}
@@ -304,12 +361,12 @@
   .trace-cmd .key{color:#8fd3c1}
   .trace-code{
     font-family:var(--mono);font-size:10px;line-height:1.55;
-    background:#f5f3ee;border:1px solid var(--line);border-radius:9px;
+    background:var(--surface-4);border:1px solid var(--line);border-radius:9px;
     padding:8px 10px;margin:0 0 8px;white-space:pre-wrap;word-break:break-word;
-    color:#3a4256;
+    color:var(--ink2);
   }
   .trace-code .kw{color:var(--accent);font-weight:600}
-  .trace-code .cm{color:#8a8578}
+  .trace-code .cm{color:var(--muted)}
   .trace-why{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink2)}
 
   .job-tip{
@@ -334,7 +391,7 @@
   .quiz-opts{display:flex;flex-direction:column;gap:5px}
   .quiz-opt{
     width:100%;text-align:left;font-size:12px;padding:7px 10px;
-    border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;
+    border:1px solid var(--line);background:var(--surface);border-radius:8px;cursor:pointer;
   }
   .quiz-opt:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
   .quiz-opt.ok{border-color:rgba(47,111,94,.5);background:var(--primary-soft);color:var(--primary);font-weight:600}
@@ -356,8 +413,8 @@
   .glossary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
   .glossary-head h2{font-family:var(--serif);font-weight:400;margin:6px 0 0;font-size:26px}
   .glossary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .glossary-term{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fdfcfa}
-  .glossary-term.is-focus{outline:2px solid var(--accent);outline-offset:2px;background:#fff6ee}
+  .glossary-term{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:var(--surface-2)}
+  .glossary-term.is-focus{outline:2px solid var(--accent);outline-offset:2px;background:var(--focus)}
   .glossary-term b{font-size:12.5px}
   .glossary-term p{margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink2)}
   .glossary-links{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px 12px;font-size:12px;color:var(--muted)}
@@ -374,7 +431,7 @@
   }
   .arch-head{
     display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-    padding:11px 16px;border-bottom:1px solid var(--line);background:#fdfcfa;
+    padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);
   }
   .arch-title{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;color:var(--ink2)}
   .arch-title b{font-weight:500;color:var(--ink)}
@@ -384,17 +441,17 @@
   .arch-note{padding:0 16px 11px;font-size:11px;color:var(--muted)}
   .arch-note code{font-size:10px}
 
-  .arch-node rect{fill:#fffdf8;stroke:#dcd6c8;stroke-width:1.2;transition:fill .2s,stroke .2s}
+  .arch-node rect{fill:var(--paper);stroke:var(--arch-node-line);stroke-width:1.2;transition:fill .2s,stroke .2s}
   .arch-node .t{font-family:var(--mono);font-size:10.5px;font-weight:600;fill:var(--ink)}
   .arch-node .s{font-family:var(--mono);font-size:8px;fill:var(--muted)}
   .arch-node .k{font-family:var(--mono);font-size:8px;fill:var(--primary)}
-  .arch-node.is-hot rect{fill:#fff4ea;stroke:var(--accent);stroke-width:2.2}
-  .arch-node.is-hot .t{fill:#a45f2c}
+  .arch-node.is-hot rect{fill:var(--arch-node-hot);stroke:var(--accent);stroke-width:2.2}
+  .arch-node.is-hot .t{fill:var(--arch-node-hot-ink)}
   .arch-node[data-term]{cursor:pointer}
-  .arch-node[data-term]:hover rect{fill:#fdf4e8;stroke:var(--accent)}
+  .arch-node[data-term]:hover rect{fill:var(--arch-node-hover);stroke:var(--accent)}
 
-  .arch-edge path{fill:none;stroke:#c7c1b3;stroke-width:1.5;transition:stroke .2s}
-  .arch-edge .arch-label{font-family:var(--mono);font-size:8px;fill:#8a8578}
+  .arch-edge path{fill:none;stroke:var(--arch-edge);stroke-width:1.5;transition:stroke .2s}
+  .arch-edge .arch-label{font-family:var(--mono);font-size:8px;fill:var(--arch-edge-label)}
   .arch-edge.dashed path{stroke-dasharray:4 4}
   .arch-edge.is-hot path{
     stroke:var(--accent);stroke-width:2.4;marker-end:url(#archArrowHot);
@@ -465,10 +522,10 @@
       <svg id="archMap" viewBox="0 0 1000 210" role="img" aria-label="Diagrama de componentes de BullMQ: productor, router, wait, prioritized, delayed, moveToActive, worker, completed, failed y stream de eventos">
         <defs>
           <marker id="archArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="#c7c1b3"/>
+            <path d="M0,0 L10,5 L0,10 z" style="fill:var(--arch-edge)"/>
           </marker>
           <marker id="archArrowHot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="#c97b3f"/>
+            <path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/>
           </marker>
         </defs>
 
@@ -604,6 +661,7 @@
             <option value="8">8× · rápido</option>
             <option value="0">manual · paso a paso</option>
           </select>
+          <button id="btnTheme" class="sm" title="Cambiar a fondo oscuro" aria-pressed="false">☾ Oscuro</button>
           <button id="btnGlossary" class="sm" title="Glosario de conceptos BullMQ">?</button>
           <button id="btnUndo" class="sm" title="Deshacer la última colocación correcta">↶ Deshacer</button>
           <button id="btnReplay" class="sm" title="Rebobinar esta oleada">⟲ Rebobinar</button>
@@ -726,21 +784,146 @@
   var PRIORITY_MULT = BullMQSim.PRIORITY_MULT;
   var ZONES = ["wait", "prioritized", "delayed"];
 
-  var ZONE_COLOR = {
-    wait: "#2f6f5e",
-    prioritized: "#c97b3f",
-    delayed: "#5f7d8c"
-  };
-  var ZONE_SOFT = {
-    wait: "rgba(47,111,94,.08)",
-    prioritized: "rgba(201,123,63,.10)",
-    delayed: "rgba(95,125,140,.10)"
-  };
+  // ZONE_COLOR y ZONE_SOFT se derivan del tema activo en setTheme().
+  var ZONE_COLOR = {};
+  var ZONE_SOFT = {};
   var ZONE_LABEL = {
     wait: "wait · LIST",
     prioritized: "prioritized · ZSET",
     delayed: "delayed · ZSET"
   };
+
+  /* ================================================================== */
+  /* 0b. Tema claro / oscuro                                             */
+  /* ================================================================== */
+
+  // Paleta del canvas por tema. Todas las funciones de dibujo leen C.*,
+  // de modo que cambiar de tema solo reasigna este objeto y repinta.
+  var THEMES = {
+    light: {
+      zone: { wait: "#2f6f5e", prioritized: "#c97b3f", delayed: "#5f7d8c" },
+      zoneSoft: {
+        wait: "rgba(47,111,94,.08)",
+        prioritized: "rgba(201,123,63,.10)",
+        delayed: "rgba(95,125,140,.10)"
+      },
+      colors: {
+        bgTop: "#f8f5ee", bgMid: "#f2f6f2", bgBottom: "#e5efea",
+        bgGlow: "rgba(201,123,63,.07)", bgGlowEnd: "rgba(201,123,63,0)",
+        bgDot: "rgba(47,111,94,.05)",
+        panel: "#ffffff", panelLine: "#e9e3d6", panelShadow: "rgba(0,0,0,.035)",
+        dockShadow: "rgba(20,23,30,.08)", shadow07: "rgba(20,23,30,.07)",
+        paperShadow: "rgba(20,23,30,.045)",
+        crateBase: "#ffffff", crateDoneTop: "#edf4ef", crateDoneFront: "#f8fbf8",
+        crateDoneSide: "#e3ebe5", crateEdge: "rgba(20,23,30,.16)",
+        crateRib: "rgba(20,23,30,.055)", crateEdgeSoft: "rgba(20,23,30,.10)",
+        crateCorner: "rgba(20,23,30,.14)",
+        ink: "#14171e", ink2: "#3a4256", muted: "#7c7a72", faint: "#a8a59c",
+        okText: "#2f6f5e", statusText: "#3a5a53", statusWait: "#4d6a63",
+        dockLabel: "#6b563c", dockSub: "#8a7357", dockWarn: "#7c6a4f",
+        barTrack: "#f1ece2", onAccent: "#ffffff",
+        accent: "#c97b3f", danger: "#b06367",
+        dockFill: "#e8d9bd", dockTop: "#f6efe1", dockMid: "#eee2cc",
+        dockBottom: "#e3d2b4", dockPlank: "rgba(124,96,57,.15)",
+        dockPost: "rgba(91,73,47,.55)", dockPostHi: "rgba(255,255,255,.35)",
+        dockBorder: "#dcc9a7",
+        washEnd: "rgba(255,255,255,0)", wave: "rgba(255,255,255,.42)",
+        shipWave: "rgba(255,255,255,.72)", flowDot: "rgba(255,255,255,.85)",
+        statusLabelBg: "rgba(255,255,255,.66)", stepCard: "rgba(255,255,255,.68)",
+        stepCardLine: "rgba(255,255,255,.9)",
+        seaPanel: "#dfece7", seaSky0: "#f4f8f5", seaSky1: "#e5f0eb",
+        seaSky2: "#cfe2db", seaSky3: "#b7d3ca", sun: "rgba(201,123,63,.16)",
+        seaBorder: "#d5e5df",
+        hullTop: "#3c635b", hullMid: "#2c4f49", hullBottom: "#1d3733",
+        hullLine: "rgba(12,28,25,.45)", deck: "#e7d7b8", deckLine: "rgba(91,73,47,.35)",
+        bridge: "#f4ecdd", bridgeLine: "rgba(20,23,30,.18)",
+        bridgeWindow: "#9fc4c0", crane: "rgba(44,79,73,.75)",
+        paper: "#fffdf8", paperLine: "rgba(95,125,140,.10)",
+        paperMargin: "rgba(176,99,103,.16)", tagBg: "#ffffff",
+        tagBorder: "rgba(47,111,94,.22)"
+      }
+    },
+    dark: {
+      zone: { wait: "#4fbfa0", prioritized: "#e0935a", delayed: "#8fb0c0" },
+      zoneSoft: {
+        wait: "rgba(79,191,160,.14)",
+        prioritized: "rgba(224,147,90,.14)",
+        delayed: "rgba(143,176,192,.14)"
+      },
+      colors: {
+        bgTop: "#161b22", bgMid: "#111620", bgBottom: "#0b0f14",
+        bgGlow: "rgba(224,147,90,.10)", bgGlowEnd: "rgba(224,147,90,0)",
+        bgDot: "rgba(255,255,255,.05)",
+        panel: "#171d26", panelLine: "#2a323d", panelShadow: "rgba(0,0,0,.45)",
+        dockShadow: "rgba(0,0,0,.45)", shadow07: "rgba(0,0,0,.4)",
+        paperShadow: "rgba(0,0,0,.45)",
+        crateBase: "#141a22", crateDoneTop: "#20262f", crateDoneFront: "#262d38",
+        crateDoneSide: "#1b212a", crateEdge: "rgba(255,255,255,.16)",
+        crateRib: "rgba(255,255,255,.05)", crateEdgeSoft: "rgba(255,255,255,.10)",
+        crateCorner: "rgba(255,255,255,.10)",
+        ink: "#e8ecf3", ink2: "#b7c0cd", muted: "#98a2b3", faint: "#69727f",
+        okText: "#4fbfa0", statusText: "#c3d9d3", statusWait: "#9fbcb4",
+        dockLabel: "#cbb089", dockSub: "#a99a80", dockWarn: "#b09d7e",
+        barTrack: "#232b36", onAccent: "#0d1014",
+        accent: "#e0935a", danger: "#d98a8f",
+        dockFill: "#241f17", dockTop: "#2b251b", dockMid: "#241f17",
+        dockBottom: "#1b1710", dockPlank: "rgba(255,255,255,.06)",
+        dockPost: "rgba(0,0,0,.5)", dockPostHi: "rgba(255,255,255,.18)",
+        dockBorder: "#3a3327",
+        washEnd: "rgba(0,0,0,0)", wave: "rgba(255,255,255,.14)",
+        shipWave: "rgba(255,255,255,.30)", flowDot: "rgba(255,255,255,.28)",
+        statusLabelBg: "rgba(9,13,18,.55)", stepCard: "rgba(9,13,18,.5)",
+        stepCardLine: "rgba(255,255,255,.12)",
+        seaPanel: "#14201f", seaSky0: "#1a2622", seaSky1: "#16211f",
+        seaSky2: "#122220", seaSky3: "#0f1f1e", sun: "rgba(224,147,90,.14)",
+        seaBorder: "#2a3a37",
+        hullTop: "#4a7a70", hullMid: "#35605a", hullBottom: "#22433d",
+        hullLine: "rgba(0,0,0,.5)", deck: "#d9c8a4", deckLine: "rgba(0,0,0,.35)",
+        bridge: "#242c35", bridgeLine: "rgba(255,255,255,.14)",
+        bridgeWindow: "#6fa9a2", crane: "rgba(150,196,186,.7)",
+        paper: "#1b2129", paperLine: "rgba(255,255,255,.06)",
+        paperMargin: "rgba(217,138,143,.22)", tagBg: "#1b2129",
+        tagBorder: "rgba(79,191,160,.35)"
+      }
+    }
+  };
+
+  var C = THEMES.light.colors;
+  var CURRENT_THEME = "light";
+
+  function setTheme(name, opts) {
+    var t = THEMES[name] ? name : "light";
+    CURRENT_THEME = t;
+    C = THEMES[t].colors;
+    ZONE_COLOR = THEMES[t].zone;
+    ZONE_SOFT = THEMES[t].zoneSoft;
+    if (document.documentElement) document.documentElement.setAttribute("data-theme", t);
+    var btn = $("btnTheme");
+    if (btn) {
+      btn.textContent = t === "dark" ? "☀ Claro" : "☾ Oscuro";
+      btn.setAttribute("aria-pressed", t === "dark" ? "true" : "false");
+      btn.title = t === "dark" ? "Cambiar a fondo claro" : "Cambiar a fondo oscuro";
+    }
+    try { localStorage.setItem("puerto-theme", t); } catch (e) { /* almacenamiento no disponible */ }
+    if (!opts || !opts.silent) draw();
+  }
+
+  function toggleTheme() {
+    setTheme(CURRENT_THEME === "dark" ? "light" : "dark");
+  }
+
+  function initialTheme() {
+    try {
+      var saved = localStorage.getItem("puerto-theme");
+      if (saved === "light" || saved === "dark") return saved;
+    } catch (e) { /* ignorado */ }
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+    } catch (e) { /* ignorado */ }
+    return "light";
+  }
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -957,15 +1140,15 @@
 
   function panelBg(rect) {
     ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,.035)";
+    ctx.shadowColor = C.panelShadow;
     ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 2;
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = C.panel;
     ctx.fill();
     ctx.restore();
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.strokeStyle = "#e9e3d6";
+    ctx.strokeStyle = C.panelLine;
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -1051,26 +1234,26 @@
     var accent = ZONE_COLOR[zone] || ZONE_COLOR.wait;
     var pal = {
       accent: accent,
-      top: mixHex(accent, "#ffffff", 0.80),
-      front: "#ffffff",
-      side: mixHex(accent, "#ffffff", 0.62),
-      edge: "rgba(20,23,30,.16)",
-      rib: "rgba(20,23,30,.055)"
+      top: mixHex(accent, C.crateBase, 0.80),
+      front: C.crateBase,
+      side: mixHex(accent, C.crateBase, 0.62),
+      edge: C.crateEdge,
+      rib: C.crateRib
     };
     if (mode === "active") {
-      pal.top = mixHex(accent, "#ffffff", 0.68);
-      pal.front = mixHex(accent, "#ffffff", 0.91);
-      pal.side = mixHex(accent, "#ffffff", 0.54);
+      pal.top = mixHex(accent, C.crateBase, 0.68);
+      pal.front = mixHex(accent, C.crateBase, 0.91);
+      pal.side = mixHex(accent, C.crateBase, 0.54);
       pal.edge = accent;
     } else if (mode === "done") {
-      pal.top = "#edf4ef";
-      pal.front = "#f8fbf8";
-      pal.side = "#e3ebe5";
+      pal.top = C.crateDoneTop;
+      pal.front = C.crateDoneFront;
+      pal.side = C.crateDoneSide;
     } else if (mode === "stack") {
-      pal.top = mixHex(accent, "#ffffff", 0.58);
-      pal.front = mixHex(accent, "#ffffff", 0.76);
-      pal.side = mixHex(accent, "#ffffff", 0.48);
-      pal.edge = "rgba(20,23,30,.10)";
+      pal.top = mixHex(accent, C.crateBase, 0.58);
+      pal.front = mixHex(accent, C.crateBase, 0.76);
+      pal.side = mixHex(accent, C.crateBase, 0.48);
+      pal.edge = C.crateEdgeSoft;
     }
     return pal;
   }
@@ -1081,7 +1264,7 @@
 
     if (!opts.noShadow) {
       ctx.save();
-      ctx.fillStyle = "rgba(20,23,30,.07)";
+      ctx.fillStyle = C.shadow07;
       ctx.beginPath();
       ctx.ellipse(g.bx + g.bw / 2, g.by + g.bh - 1, g.bw * 0.48, 4.5, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -1144,7 +1327,7 @@
       ctx.globalAlpha = 1;
 
       // esquinas metálicas
-      ctx.fillStyle = "rgba(20,23,30,.14)";
+      ctx.fillStyle = C.crateCorner;
       ctx.fillRect(g.bx + g.frontW - 4, g.frontY, 4, 4);
       ctx.fillRect(g.bx, g.frontY + g.frontH - 4, 4, 4);
     }
@@ -1200,16 +1383,16 @@
     ctx.textBaseline = "alphabetic";
 
     ctx.font = "500 9px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#7c7a72";
+    ctx.fillStyle = C.muted;
     ctx.fillText("#" + job.id, tx, y1);
 
     ctx.font = "600 11px 'Outfit', sans-serif";
-    ctx.fillStyle = o.done ? "#7c7a72" : "#14171e";
+    ctx.fillStyle = o.done ? C.muted : C.ink;
     ctx.fillText(ellipsis(job.name, nameMax, "600 11px 'Outfit', sans-serif"), tx + 20, y1);
 
     var pText = "p" + job.priority;
     ctx.font = "500 9px 'JetBrains Mono', monospace";
-    ctx.fillStyle = job.priority > 0 ? color : "#7c7a72";
+    ctx.fillStyle = job.priority > 0 ? color : C.muted;
     ctx.fillText(pText, tx, y2);
 
     var metaX = tx + ctx.measureText(pText).width;
@@ -1224,7 +1407,7 @@
     if (job.delay > 0) meta = " · +" + fmt(job.delay);
     else if (o.dock || !scoreText) meta = " · sin delay";
     ctx.font = "500 9px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#7c7a72";
+    ctx.fillStyle = C.muted;
     if (meta) {
       ctx.fillText(ellipsis(meta, Math.max(0, metaMax), "500 9px 'JetBrains Mono', monospace"), metaX, y2);
     }
@@ -1241,7 +1424,7 @@
       var pct = clamp(o.progress, 0, 1);
       var barW = g.frontW - 20;
       rr(g.bx + 10, g.frontY + g.frontH - 6, barW, 3.5, 2);
-      ctx.fillStyle = "#f1ece2";
+      ctx.fillStyle = C.barTrack;
       ctx.fill();
       rr(g.bx + 10, g.frontY + g.frontH - 6, barW * pct, 3.5, 2);
       ctx.fillStyle = color;
@@ -1253,7 +1436,7 @@
       ctx.arc(g.bx + g.frontW - 10, g.frontY + 11, 8.5, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = C.onAccent;
       ctx.font = "600 9.5px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -1267,11 +1450,11 @@
 
   function drawDockBg(rect) {
     ctx.save();
-    ctx.shadowColor = "rgba(20,23,30,.08)";
+    ctx.shadowColor = C.dockShadow;
     ctx.shadowBlur = 14;
     ctx.shadowOffsetY = 3;
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.fillStyle = "#e8d9bd";
+    ctx.fillStyle = C.dockFill;
     ctx.fill();
     ctx.restore();
 
@@ -1280,14 +1463,14 @@
     ctx.clip();
 
     var g = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
-    g.addColorStop(0, "#f6efe1");
-    g.addColorStop(0.55, "#eee2cc");
-    g.addColorStop(1, "#e3d2b4");
+    g.addColorStop(0, C.dockTop);
+    g.addColorStop(0.55, C.dockMid);
+    g.addColorStop(1, C.dockBottom);
     ctx.fillStyle = g;
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
     // tablas del muelle
-    ctx.strokeStyle = "rgba(124,96,57,.15)";
+    ctx.strokeStyle = C.dockPlank;
     ctx.lineWidth = 1;
     for (var y = rect.y + 30; y < rect.y + rect.h; y += 18) {
       ctx.beginPath();
@@ -1309,18 +1492,18 @@
     for (var by = rect.y + 82; by < rect.y + rect.h; by += 128) {
       ctx.beginPath();
       ctx.ellipse(rect.x + 7, by, 3.5, 5.5, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(91,73,47,.55)";
+      ctx.fillStyle = C.dockPost;
       ctx.fill();
       ctx.beginPath();
       ctx.ellipse(rect.x + 7, by - 4, 2.5, 1.8, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,.35)";
+      ctx.fillStyle = C.dockPostHi;
       ctx.fill();
     }
 
     ctx.restore();
 
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.strokeStyle = "#dcc9a7";
+    ctx.strokeStyle = C.dockBorder;
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -1330,20 +1513,20 @@
 
     ctx.textAlign = "left";
     ctx.font = "600 10.5px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#6b563c";
+    ctx.fillStyle = C.dockLabel;
     ctx.fillText("MUELLE DE LLEGADA", 28, 40);
 
     var pending = pendingItems();
     ctx.font = "11px 'Outfit', sans-serif";
-    ctx.fillStyle = "#8a7357";
+    ctx.fillStyle = C.dockSub;
     ctx.fillText(pending.length + (pending.length === 1 ? " contenedor" : " contenedores"), 28, 55);
 
     if (!pending.length) {
       ctx.font = "600 12px 'Outfit', sans-serif";
-      ctx.fillStyle = "#2f6f5e";
+      ctx.fillStyle = C.okText;
       ctx.fillText("✓ Todo embarcado", 28, 96);
       ctx.font = "11px 'Outfit', sans-serif";
-      ctx.fillStyle = "#7c6a4f";
+      ctx.fillStyle = C.dockWarn;
       ctx.fillText("Predice el orden y", 28, 114);
       ctx.fillText("pulsa Zarpar.", 28, 130);
       return;
@@ -1365,7 +1548,7 @@
       });
       if (G.selected === spec.id) {
         rr(slot.x - 1, slot.y - 1, slot.w + 2, slot.h + 2, 10);
-        ctx.strokeStyle = "#c97b3f";
+        ctx.strokeStyle = C.accent;
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -1378,7 +1561,7 @@
     ctx.clip();
 
     var g = ctx.createLinearGradient(rect.x, rect.y + 70, rect.x, rect.y + rect.h);
-    g.addColorStop(0, "rgba(255,255,255,0)");
+    g.addColorStop(0, C.washEnd);
     g.addColorStop(1, ZONE_SOFT[zone]);
     ctx.fillStyle = g;
     ctx.fillRect(rect.x, rect.y + 40, rect.w, rect.h - 40);
@@ -1418,7 +1601,7 @@
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.font = "600 12.5px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#14171e";
+    ctx.fillStyle = C.ink;
     ctx.fillText("bull:puerto:" + zone, rect.x + 18, rect.y + 26);
 
     var type = zone === "wait" ? "LIST" : "ZSET";
@@ -1438,12 +1621,12 @@
         ? "score = priority × 2³² + contador"
         : "score = timestamp × 4096 + offset";
     ctx.font = "11px 'Outfit', sans-serif";
-    ctx.fillStyle = "#7c7a72";
+    ctx.fillStyle = C.muted;
     ctx.fillText(subtitle, rect.x + 18, rect.y + 44);
 
     ctx.textAlign = "right";
     ctx.font = "500 10px 'JetBrains Mono', monospace";
-    ctx.fillStyle = entries.length ? color : "#7c7a72";
+    ctx.fillStyle = entries.length ? color : C.muted;
     ctx.fillText(entries.length + (entries.length === 1 ? " job" : " jobs"), rect.x + rect.w - 18, rect.y + 44);
     ctx.textAlign = "left";
 
@@ -1463,7 +1646,7 @@
     // vacío
     if (!entries.length) {
       ctx.font = "italic 12px 'Outfit', sans-serif";
-      ctx.fillStyle = "#a8a59c";
+      ctx.fillStyle = C.faint;
       ctx.textAlign = "center";
       ctx.fillText("vacía · suelta aquí", rect.x + rect.w / 2, rect.y + 112);
       ctx.textAlign = "left";
@@ -1493,7 +1676,7 @@
       ctx.save();
       ctx.globalAlpha = k * 0.9;
       ctx.lineWidth = 2.5;
-      ctx.strokeStyle = lfx.kind === "bad" ? "#b06367" : color;
+      ctx.strokeStyle = lfx.kind === "bad" ? C.danger : color;
       rr(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2, 13);
       ctx.stroke();
       ctx.restore();
@@ -1502,11 +1685,11 @@
 
   function drawSeaPanel(rect, now) {
     ctx.save();
-    ctx.shadowColor = "rgba(20,23,30,.07)";
+    ctx.shadowColor = C.shadow07;
     ctx.shadowBlur = 14;
     ctx.shadowOffsetY = 3;
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.fillStyle = "#dfece7";
+    ctx.fillStyle = C.seaPanel;
     ctx.fill();
     ctx.restore();
 
@@ -1515,22 +1698,22 @@
     ctx.clip();
 
     var sky = ctx.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.h);
-    sky.addColorStop(0, "#f4f8f5");
-    sky.addColorStop(0.48, "#e5f0eb");
-    sky.addColorStop(0.49, "#cfe2db");
-    sky.addColorStop(1, "#b7d3ca");
+    sky.addColorStop(0, C.seaSky0);
+    sky.addColorStop(0.48, C.seaSky1);
+    sky.addColorStop(0.49, C.seaSky2);
+    sky.addColorStop(1, C.seaSky3);
     ctx.fillStyle = sky;
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
     // sol tenue
     var sun = ctx.createRadialGradient(rect.x + rect.w - 70, rect.y + 18, 4, rect.x + rect.w - 70, rect.y + 18, 120);
-    sun.addColorStop(0, "rgba(201,123,63,.16)");
-    sun.addColorStop(1, "rgba(201,123,63,0)");
+    sun.addColorStop(0, C.sun);
+    sun.addColorStop(1, C.bgGlowEnd);
     ctx.fillStyle = sun;
     ctx.fillRect(rect.x + rect.w - 210, rect.y, 210, 140);
 
     // olas de fondo
-    ctx.strokeStyle = "rgba(255,255,255,.42)";
+    ctx.strokeStyle = C.wave;
     ctx.lineWidth = 1.2;
     for (var i = 0; i < 3; i++) {
       var wy = rect.y + 92 + i * 13;
@@ -1546,7 +1729,7 @@
     ctx.restore();
 
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.strokeStyle = "#d5e5df";
+    ctx.strokeStyle = C.seaBorder;
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -1561,7 +1744,7 @@
     // reflejo
     ctx.save();
     ctx.globalAlpha = 0.16;
-    ctx.fillStyle = "#2c4f49";
+    ctx.fillStyle = C.hullMid;
     ctx.beginPath();
     ctx.ellipse(x + w / 2, bottom + 8, w * 0.33, 7, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -1569,9 +1752,9 @@
 
     // casco 3/4
     var hull = ctx.createLinearGradient(x, deckY, x, bottom);
-    hull.addColorStop(0, "#3c635b");
-    hull.addColorStop(0.55, "#2c4f49");
-    hull.addColorStop(1, "#1d3733");
+    hull.addColorStop(0, C.hullTop);
+    hull.addColorStop(0.55, C.hullMid);
+    hull.addColorStop(1, C.hullBottom);
     ctx.beginPath();
     ctx.moveTo(stern, deckY);
     ctx.lineTo(bow, deckY + 4);
@@ -1581,7 +1764,7 @@
     ctx.closePath();
     ctx.fillStyle = hull;
     ctx.fill();
-    ctx.strokeStyle = "rgba(12,28,25,.45)";
+    ctx.strokeStyle = C.hullLine;
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
@@ -1595,7 +1778,7 @@
     ctx.quadraticCurveTo(stern - 4, deckY + 26, stern, deckY);
     ctx.closePath();
     ctx.clip();
-    ctx.strokeStyle = "#c97b3f";
+    ctx.strokeStyle = C.accent;
     ctx.globalAlpha = 0.85;
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -1611,30 +1794,30 @@
     ctx.lineTo(bow - 24, deckY - 13);
     ctx.lineTo(stern + 22, deckY - 17);
     ctx.closePath();
-    ctx.fillStyle = "#e7d7b8";
+    ctx.fillStyle = C.deck;
     ctx.fill();
-    ctx.strokeStyle = "rgba(91,73,47,.35)";
+    ctx.strokeStyle = C.deckLine;
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // puente y chimenea al fondo
-    ctx.fillStyle = "#f4ecdd";
+    ctx.fillStyle = C.bridge;
     rr(x + w - 76, y + 42, 34, 66, 3);
     ctx.fill();
-    ctx.strokeStyle = "rgba(20,23,30,.18)";
+    ctx.strokeStyle = C.bridgeLine;
     ctx.stroke();
-    ctx.fillStyle = "#9fc4c0";
+    ctx.fillStyle = C.bridgeWindow;
     for (var wy = y + 50; wy <= y + 86; wy += 12) {
       ctx.fillRect(x + w - 70, wy, 22, 5);
     }
-    ctx.fillStyle = "#2c4f49";
+    ctx.fillStyle = C.hullMid;
     rr(x + w - 92, y + 44, 12, 24, 2);
     ctx.fill();
-    ctx.fillStyle = "#c97b3f";
+    ctx.fillStyle = C.accent;
     ctx.fillRect(x + w - 92, y + 54, 12, 4);
 
     // grúa de cubierta
-    ctx.strokeStyle = "rgba(44,79,73,.75)";
+    ctx.strokeStyle = C.crane;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(x + 44, deckY - 12);
@@ -1646,13 +1829,13 @@
     ctx.moveTo(x + 108, y + 64);
     ctx.lineTo(x + 108, y + 82);
     ctx.stroke();
-    ctx.fillStyle = "#c97b3f";
+    ctx.fillStyle = C.accent;
     ctx.beginPath();
     ctx.arc(x + 108, y + 85, 3, 0, Math.PI * 2);
     ctx.fill();
 
     // olas delanteras
-    ctx.strokeStyle = "rgba(255,255,255,.72)";
+    ctx.strokeStyle = C.shipWave;
     ctx.lineWidth = 1.4;
     for (var i = 0; i < 4; i++) {
       var lineY = bottom - 4 + i * 8;
@@ -1668,18 +1851,18 @@
 
   function drawManifestBg(rect) {
     ctx.save();
-    ctx.shadowColor = "rgba(20,23,30,.045)";
+    ctx.shadowColor = C.paperShadow;
     ctx.shadowBlur = 12;
     ctx.shadowOffsetY = 2;
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.fillStyle = "#fffdf8";
+    ctx.fillStyle = C.paper;
     ctx.fill();
     ctx.restore();
 
     ctx.save();
     rr(rect.x, rect.y, rect.w, rect.h, 14);
     ctx.clip();
-    ctx.strokeStyle = "rgba(95,125,140,.10)";
+    ctx.strokeStyle = C.paperLine;
     ctx.lineWidth = 1;
     for (var y = rect.y + 46; y < rect.y + rect.h - 10; y += 22) {
       ctx.beginPath();
@@ -1687,7 +1870,7 @@
       ctx.lineTo(rect.x + rect.w - 12, y);
       ctx.stroke();
     }
-    ctx.strokeStyle = "rgba(176,99,103,.16)";
+    ctx.strokeStyle = C.paperMargin;
     ctx.beginPath();
     ctx.moveTo(rect.x + 36, rect.y + 34);
     ctx.lineTo(rect.x + 36, rect.y + rect.h - 10);
@@ -1695,7 +1878,7 @@
     ctx.restore();
 
     rr(rect.x, rect.y, rect.w, rect.h, 14);
-    ctx.strokeStyle = "#e9e3d6";
+    ctx.strokeStyle = C.panelLine;
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -1704,9 +1887,9 @@
     var zone = zoneOf(slot.id) || "wait";
     var color = ZONE_COLOR[zone];
     rr(slot.x, slot.y, slot.w, slot.h, 5);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = C.tagBg;
     ctx.fill();
-    ctx.strokeStyle = "rgba(47,111,94,.22)";
+    ctx.strokeStyle = C.tagBorder;
     ctx.lineWidth = 1;
     ctx.stroke();
 
@@ -1721,7 +1904,7 @@
 
     ctx.textAlign = "center";
     ctx.font = "600 9px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#2f6f5e";
+    ctx.fillStyle = C.okText;
     ctx.fillText("#" + slot.id + (slot.done ? " ✓" : " ▶"), slot.x + slot.w / 2, slot.y + slot.h / 2 + 3);
     ctx.textAlign = "left";
   }
@@ -1733,17 +1916,17 @@
 
     var labelW = 174;
     rr(PROC.x + 14, PROC.y + 11, labelW, 22, 6);
-    ctx.fillStyle = "rgba(255,255,255,.66)";
+    ctx.fillStyle = C.statusLabelBg;
     ctx.fill();
     ctx.textAlign = "left";
     ctx.font = "600 10px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#3a5a53";
+    ctx.fillStyle = C.statusText;
     ctx.fillText("MOTOR · moveToActive", PROC.x + 24, PROC.y + 26);
 
     if (G.screen === "running" || G.screen === "result") {
       if (!G.layout.active.length) {
         ctx.font = "italic 11.5px 'Outfit', sans-serif";
-        ctx.fillStyle = "#4d6a63";
+        ctx.fillStyle = C.statusWait;
         ctx.fillText("esperando jobs en cubierta…", PROC.x + 24, PROC.y + 66);
       }
       G.layout.active.forEach(function (slot) {
@@ -1761,9 +1944,9 @@
       });
     } else {
       rr(PROC.x + 14, PROC.y + 36, PROC.w - 28, 74, 8);
-      ctx.fillStyle = "rgba(255,255,255,.68)";
+      ctx.fillStyle = C.stepCard;
       ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,.9)";
+      ctx.strokeStyle = C.stepCardLine;
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -1774,7 +1957,7 @@
       ];
       steps.forEach(function (step, i) {
         ctx.font = "11px 'Outfit', sans-serif";
-        ctx.fillStyle = step.done ? "#2f6f5e" : "#3a4256";
+        ctx.fillStyle = step.done ? C.okText : C.ink2;
         ctx.fillText((step.done ? "✓ " : "○ ") + step.label, PROC.x + 24, PROC.y + 54 + i * 22);
       });
     }
@@ -1783,12 +1966,12 @@
     drawManifestBg(DONE);
     ctx.textAlign = "left";
     ctx.font = "600 10px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#7c7a72";
+    ctx.fillStyle = C.muted;
     ctx.fillText("ORDEN REAL · activados", DONE.x + 48, DONE.y + 23);
 
     if (!G.layout.completed.length) {
       ctx.font = "italic 11px 'Outfit', sans-serif";
-      ctx.fillStyle = "#a8a59c";
+      ctx.fillStyle = C.faint;
       ctx.fillText("aún ninguno", DONE.x + 48, DONE.y + 48);
     }
 
@@ -1799,19 +1982,19 @@
 
   function drawBackdrop(now) {
     var sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, "#f8f5ee");
-    sky.addColorStop(0.6, "#f2f6f2");
-    sky.addColorStop(1, "#e5efea");
+    sky.addColorStop(0, C.bgTop);
+    sky.addColorStop(0.6, C.bgMid);
+    sky.addColorStop(1, C.bgBottom);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
     var glow = ctx.createRadialGradient(W - 70, 30, 8, W - 70, 30, 400);
-    glow.addColorStop(0, "rgba(201,123,63,.07)");
-    glow.addColorStop(1, "rgba(201,123,63,0)");
+    glow.addColorStop(0, C.bgGlow);
+    glow.addColorStop(1, C.bgGlowEnd);
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = "rgba(47,111,94,.05)";
+    ctx.fillStyle = C.bgDot;
     for (var x = 12; x < W; x += 28) {
       for (var y = 12; y < H; y += 28) {
         ctx.fillRect(x, y, 1, 1);
@@ -1904,7 +2087,7 @@
     var b = flowAnchor(G.flow.to);
     if (!a || !b) { G.flow = null; return; }
     var c = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 48 };
-    var color = (G.flow.to && ZONE_COLOR[G.flow.to]) || "#c97b3f";
+    var color = (G.flow.to && ZONE_COLOR[G.flow.to]) || C.accent;
     var fade = Math.min(1, (1 - age / dur) * 1.7);
 
     ctx.save();
@@ -1927,12 +2110,12 @@
     ctx.beginPath();
     ctx.arc(px, py, 5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,.85)";
+    ctx.strokeStyle = C.flowDot;
     ctx.lineWidth = 1.4;
     ctx.stroke();
 
     ctx.font = "600 9px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#14171e";
+    ctx.fillStyle = C.ink;
     ctx.fillText(G.flow.label, px + 9, py - 7);
     ctx.restore();
   }
@@ -3114,6 +3297,7 @@
 
   $("btnStep").addEventListener("click", stepOnce);
   $("btnAuto").addEventListener("click", resumeAuto);
+  $("btnTheme").addEventListener("click", toggleTheme);
 
   function openGlossaryTerm(term) {
     $("glossary").classList.remove("hidden");
@@ -3186,6 +3370,7 @@
   }
 
   // estado inicial
+  setTheme(initialTheme(), { silent: true });
   startWave(0, { silent: true });
   fitCanvas();
   window.addEventListener("resize", fitCanvas);
@@ -3210,6 +3395,9 @@
     quizPack: quizPack,
     waveTotalValue: waveTotalValue,
     finishWave: finishWave,
+    setTheme: setTheme,
+    toggleTheme: toggleTheme,
+    theme: function () { return CURRENT_THEME; },
     engine: function () { return G.engine; }
   };
 })();

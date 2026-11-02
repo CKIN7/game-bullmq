@@ -350,6 +350,60 @@ console.log("\n[10] Mapa de componentes (juego-01-el-puerto-de-redis.html)");
   });
 }
 
+/* ------------------------------------------------------------------ */
+console.log("\n[11] Tema claro/oscuro (juego-01-el-puerto-de-redis.html)");
+/* ------------------------------------------------------------------ */
+
+{
+  const fs = require("fs");
+  const path = require("path");
+  const html = fs.readFileSync(
+    path.join(__dirname, "juego-01-el-puerto-de-redis.html"),
+    "utf8"
+  );
+
+  check("existe el botón de tema con aria-pressed", () => {
+    assert.ok(html.includes('id="btnTheme"'), "falta #btnTheme");
+    assert.ok(/id="btnTheme"[^>]*aria-pressed/.test(html), "el botón no expone aria-pressed");
+  });
+
+  check("el botón está cableado a toggleTheme", () => {
+    assert.ok(html.includes('$("btnTheme").addEventListener("click", toggleTheme)'));
+  });
+
+  check('existe el bloque CSS [data-theme="dark"]', () => {
+    assert.ok(html.includes('[data-theme="dark"]'), "falta el tema oscuro");
+    assert.ok(/\[data-theme="dark"\]\s*\{[\s\S]*--bg:#0d1117/.test(html), "el tema oscuro no redefine --bg");
+    assert.ok(/\[data-theme="dark"\]\s*\{[\s\S]*--ink:#e8ecf3/.test(html), "el tema oscuro no redefine --ink");
+  });
+
+  check("el tema se persiste y respeta al sistema", () => {
+    assert.ok(html.includes('localStorage.getItem("puerto-theme")'), "no lee el tema guardado");
+    assert.ok(html.includes('localStorage.setItem("puerto-theme", t)'), "no persiste el tema");
+    assert.ok(html.includes("prefers-color-scheme: dark"), "no respeta el sistema");
+  });
+
+  check("las paletas claro y oscuro definen las mismas claves", () => {
+    const themes = html.match(/var THEMES = \{[\s\S]*?\n  \};/);
+    assert.ok(themes, "no se encontró THEMES");
+    const colorBlocks = themes[0].match(/colors: \{[\s\S]*?\n      \}/g) || [];
+    assert.strictEqual(colorBlocks.length, 2, "se esperaban dos paletas de canvas");
+    const keys = (s) => [...s.matchAll(/([a-zA-Z0-9]+):\s*"/g)].map((m) => m[1]).sort();
+    const light = keys(colorBlocks[0]);
+    const dark = keys(colorBlocks[1]);
+    assert.ok(light.length > 50, "la paleta clara parece incompleta");
+    assert.deepStrictEqual(light, dark, "las paletas no cubren las mismas claves");
+  });
+
+  check("el canvas dibuja con la paleta, no con colores incrustados", () => {
+    const jsStart = html.lastIndexOf("<script>");
+    const js = html.slice(jsStart, html.indexOf("</script>", jsStart));
+    const flat = js.match(/ctx\.(fillStyle|strokeStyle|shadowColor)\s*=\s*"#/g) || [];
+    assert.strictEqual(flat.length, 0, "quedan colores literales en el canvas");
+    assert.ok(js.includes("C.crateBase") && js.includes("C.panelLine"), "el canvas no usa la paleta");
+  });
+}
+
 console.log("\n----------------------------------------");
 console.log("  " + passed + " pasaron, " + failed + " fallaron");
 console.log("----------------------------------------");
