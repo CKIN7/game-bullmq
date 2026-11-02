@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BullMQ — Juegos para aprender su infraestructura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f5f0;
+    --card:#ffffff;
+    --line:#e9e3d6;
+    --line-soft:#f1ece2;
+    --ink:#14171e;
+    --ink2:#3a4256;
+    --muted:#7c7a72;
+    --primary:#2f6f5e;
+    --primary-soft:rgba(47,111,94,.08);
+    --accent:#c97b3f;
+    --accent-soft:rgba(201,123,63,.10);
+    --danger:#b06367;
+    --danger-soft:rgba(176,99,103,.10);
+    --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans:'Outfit', ui-sans-serif, system-ui, sans-serif;
+    --serif:'DM Serif Display', Georgia, serif;
+    --r:14px;
+    --sh:0 2px 8px rgba(0,0,0,.04);
+    --sh2:0 4px 16px -2px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+  .hero{position:relative;overflow:hidden;padding:72px 0 56px}
+  .hero::before,.hero::after{
+    content:"";position:absolute;border-radius:50%;pointer-events:none;
+  }
+  .hero::before{width:520px;height:520px;top:-220px;right:-140px;
+    background:radial-gradient(circle,rgba(47,111,94,.07),transparent 70%)}
+  .hero::after{width:420px;height:420px;top:-160px;right:-60px;
+    background:radial-gradient(circle,rgba(201,123,63,.06),transparent 70%)}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--primary);background:var(--primary-soft);
+    border:1px solid rgba(47,111,94,.18);border-radius:999px;padding:5px 12px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:400;font-size:clamp(38px,6vw,62px);
+    line-height:1.06;letter-spacing:-.015em;margin:22px 0 0;max-width:19ch;
+  }
+  h1 em{font-style:italic;color:var(--primary)}
+  .lede{
+    font-size:19px;color:var(--ink2);max-width:62ch;margin:20px 0 0;line-height:1.55;
+  }
+  .hero-meta{
+    display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;
+  }
+  .chip{
+    font-family:var(--mono);font-size:12px;color:var(--ink2);
+    background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 13px;
+  }
+  section{padding:52px 0;border-top:1px solid var(--line)}
+  .sec-head{max-width:70ch;margin-bottom:30px}
+  h2{
+    font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.4vw,38px);
+    line-height:1.15;letter-spacing:-.01em;margin:0 0 12px;
+  }
+  h3{
+    font-family:var(--sans);font-weight:600;font-size:17px;margin:0 0 8px;letter-spacing:-.005em;
+  }
+  .sec-head p{margin:0;color:var(--muted);font-size:16px}
+  .sec-num{
+    font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.1em;
+    display:block;margin-bottom:10px;text-transform:uppercase;
+  }
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:22px;box-shadow:var(--sh);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+  .card p{margin:0;color:var(--ink2);font-size:15px}
+  .card p + p{margin-top:10px}
+  .icon-badge{
+    width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+    background:var(--primary-soft);color:var(--primary);margin-bottom:14px;
+  }
+  .icon-badge.amber{background:var(--accent-soft);color:var(--accent)}
+  .icon-badge.rose{background:var(--danger-soft);color:var(--danger)}
+  .tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .tag{
+    font-family:var(--mono);font-size:11px;color:var(--ink2);background:#faf8f4;
+    border:1px solid var(--line);border-radius:6px;padding:3px 8px;
+  }
+  .tag.p{color:var(--primary);border-color:rgba(47,111,94,.22);background:var(--primary-soft)}
+  .tag.a{color:var(--accent);border-color:rgba(201,123,63,.25);background:var(--accent-soft)}
+  .tag.d{color:var(--danger);border-color:rgba(176,99,103,.25);background:var(--danger-soft)}
+  code,.mono{font-family:var(--mono);font-size:.88em}
+  code{
+    background:#faf8f4;border:1px solid var(--line-soft);border-radius:5px;
+    padding:1px 5px;color:var(--ink);
+  }
+  pre{
+    background:#1a1a2e;color:#e6e6ef;border-radius:var(--r);padding:18px 20px;
+    overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.65;margin:0;
+  }
+  pre .k{color:#7dd3c0}
+  pre .s{color:#f0b775}
+  pre .c{color:#7b7b92}
+  pre .n{color:#a9b6e8}
+  .callout{
+    background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:10px;padding:18px 22px;box-shadow:var(--sh);
+  }
+  .callout p{margin:0;color:var(--ink2);font-size:15px}
+  .callout strong{color:var(--ink)}
+  .kv{display:grid;grid-template-columns:130px 1fr;row-gap:9px;column-gap:16px;margin:0;font-size:14px}
+  .kv dt{color:var(--muted);font-family:var(--mono);font-size:12.5px}
+  .kv dd{margin:0;color:var(--ink2)}
+  .timeline{list-style:none;padding:0;margin:0;position:relative}
+  .timeline::before{content:"";position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--primary);opacity:.3}
+  .timeline li{position:relative;padding:0 0 26px 34px}
+  .timeline li::before{content:"";position:absolute;left:2px;top:5px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--primary)}
+  .timeline li b{display:block;color:var(--ink);font-weight:600;margin-bottom:3px}
+  .timeline li p{margin:0;color:var(--ink2);font-size:15px}
+  .timeline .when{font-family:var(--mono);font-size:11.5px;color:var(--accent);display:block;margin-bottom:2px}
+  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+  th{
+    text-align:left;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);padding:13px 16px;border-bottom:1px solid var(--line);background:#faf8f4;font-weight:500;
+  }
+  td{padding:13px 16px;border-bottom:1px solid var(--line-soft);color:var(--ink2);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--ink);font-weight:600}
+
+  /* ===== SIMULADOR ===== */
+  .sim{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;
+    box-shadow:var(--sh2);overflow:hidden;
+  }
+  .sim-head{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:16px 20px;border-bottom:1px solid var(--line);background:#faf8f4;
+  }
+  .sim-head h3{margin:0;display:flex;align-items:center;gap:9px}
+  .sim-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  .sim-body{padding:20px}
+  .sim-cols{display:grid;grid-template-columns:1fr 300px;gap:20px}
+  .lane-wrap{display:grid;gap:14px}
+  .lane{
+    border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fdfcfa;
+  }
+  .lane-title{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:10px;
+  }
+  .lane-title b{color:var(--ink);font-weight:500}
+  .lane-type{
+    font-size:10.5px;border:1px solid var(--line);border-radius:5px;padding:1px 7px;background:#fff;color:var(--muted);
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:8px;min-height:34px}
+  .jchip{
+    display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+    border-radius:8px;padding:6px 10px;font-family:var(--mono);font-size:12px;color:var(--ink);
+    animation:pop .28s cubic-bezier(.2,.9,.3,1.3);
+  }
+  .jchip .jid{color:var(--muted);font-size:11px}
+  .jchip .pri{color:var(--accent);font-weight:500}
+  .jchip.active{border-color:rgba(47,111,94,.4);background:var(--primary-soft)}
+  .jchip.active .jname{color:var(--primary)}
+  .jchip.done{border-color:rgba(47,111,94,.25);background:rgba(47,111,94,.05);opacity:.75}
+  .jchip.fail{border-color:rgba(176,99,103,.4);background:var(--danger-soft);color:var(--danger)}
+  .jchip .bar{width:44px;height:4px;border-radius:2px;background:var(--line-soft);overflow:hidden}
+  .jchip .bar i{display:block;height:100%;background:var(--primary);transition:width .12s linear}
+  .empty{color:var(--muted);font-size:13px;font-style:italic;padding:4px 0}
+  @keyframes pop{from{transform:scale(.82);opacity:0}to{transform:scale(1);opacity:1}}
+  .side{display:flex;flex-direction:column;gap:14px}
+  .panel{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fdfcfa}
+  .panel h4{
+    margin:0 0 11px;font-family:var(--mono);font-size:11px;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;
+  }
+  .ctrls{display:flex;gap:8px;flex-wrap:wrap}
+  button{
+    font-family:var(--sans);font-size:13.5px;font-weight:500;color:var(--ink);
+    background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:8px 13px;cursor:pointer;transition:all .18s ease;
+  }
+  button:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-1px)}
+  button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  button.primary:hover{background:#285c4d;color:#fff}
+  button.sm{padding:5px 10px;font-size:12.5px}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+  .field label{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .field select,.field input{
+    font-family:var(--mono);font-size:13px;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;
+  }
+  .check{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--ink2);
+    cursor:pointer;margin-top:8px;line-height:1.45}
+  .check input{width:auto;flex:none;margin-top:2px;accent-color:var(--primary);cursor:pointer}
+  .check span b{color:var(--ink);font-weight:600}
+  .flag{
+    font-family:var(--mono);font-size:10px;letter-spacing:.04em;border-radius:4px;
+    padding:1px 5px;border:1px solid transparent;white-space:nowrap;
+  }
+  .flag.cpu{color:var(--accent);border-color:rgba(201,123,63,.35);background:var(--accent-soft)}
+  .flag.fail{color:var(--danger);border-color:rgba(176,99,103,.35);background:var(--danger-soft)}
+  .field select:focus,.field input:focus{outline:2px solid var(--primary);outline-offset:1px}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .stat{background:#fff;border:1px solid var(--line-soft);border-radius:9px;padding:9px 11px}
+  .stat .v{font-family:var(--mono);font-size:19px;color:var(--ink);line-height:1.2}
+  .stat .l{font-size:11px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+  .evtlog{
+    font-family:var(--mono);font-size:11.5px;line-height:1.75;color:#cfd3e0;
+    background:#1a1a2e;border-radius:10px;padding:12px 13px;height:190px;overflow-y:auto;
+  }
+  .evtlog .t{color:#6c6f85}
+  .evtlog .e-add{color:#8fd6c4}
+  .evtlog .e-move{color:#a9b6e8}
+  .evtlog .e-fin{color:#9fe08f}
+  .evtlog .e-err{color:#e2a0a5}
+  .evtlog div{margin-bottom:1px}
+  .sim-note{
+    font-size:13px;color:var(--muted);margin-top:14px;padding-top:13px;border-top:1px dashed var(--line);
+  }
+  .sim-note b{color:var(--ink2);font-weight:500}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:10px;height:10px;border-radius:3px;border:1px solid var(--line)}
+
+  .game-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:24px;box-shadow:var(--sh);transition:transform .2s ease,box-shadow .2s ease;
+    display:flex;flex-direction:column;
+  }
+  .game-card:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+  .game-card h3{font-size:19px;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .game-card .num{font-family:var(--mono);font-size:12px;color:var(--accent)}
+  .game-card p{color:var(--ink2);font-size:14.5px;margin:0}
+  .game-card .mech{margin-top:12px}
+  .game-card .mech b{color:var(--ink);font-weight:600}
+  .game-card .stack{margin-top:auto;padding-top:14px}
+  .stackline{
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    border-top:1px dashed var(--line);padding-top:12px;margin-top:12px;
+  }
+  .stackline b{color:var(--primary);font-weight:500}
+  footer{padding:44px 0 64px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px}
+  footer a{color:var(--primary)}
+  .refs{list-style:none;padding:0;margin:0;font-size:13.5px}
+  .refs li{padding:7px 0;border-bottom:1px dashed var(--line)}
+  .refs li:last-child{border-bottom:none}
+  .refs a{color:var(--primary);text-decoration:none}
+  .refs a:hover{text-decoration:underline}
+  .refs span{color:var(--muted);font-family:var(--mono);font-size:11.5px;display:block}
+
+  @media (max-width:900px){
+    .g2,.g3{grid-template-columns:1fr}
+    .sim-cols{grid-template-columns:1fr}
+    .side{flex-direction:row;flex-wrap:wrap}
+    .side>*{flex:1 1 260px}
+  }
+  @media (max-width:560px){
+    .wrap{padding:0 16px}
+    .hero{padding:48px 0 40px}
+    .kv{grid-template-columns:1fr}
+    .kv dt{margin-top:8px}
+    .side{flex-direction:column}
+    .field-row{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+      BullMQ v5 · Redis
+    </span>
+    <h1>Aprender BullMQ <em>jugando</em> su infraestructura</h1>
+    <p class="lede">
+      BullMQ no es difícil porque su API sea complicada: es difícil porque su comportamiento real
+      no está en la API, sino en <strong>doce scripts Lua y ocho estructuras de Redis</strong>.
+      Estos seis juegos atacan exactamente esa capa oculta, cada uno con una palanca de repetición.
+    </p>
+    <div class="hero-meta">
+      <span class="chip">6 juegos propuestos</span>
+      <span class="chip">HTML + Canvas · Three.js</span>
+      <span class="chip">Determinista / reejecutable</span>
+      <span class="chip">Estado real de Redis</span>
+    </div>
+  </header>
+
+  <!-- ================= 1. EL PROBLEMA ================= -->
+  <section id="problema">
+    <div class="sec-head">
+      <span class="sec-num">01 — El problema real</span>
+      <h2>La API promete una cosa; Redis ejecuta otra</h2>
+      <p>
+        El único modo serio de aprender esto es ver las estructuras de datos moverse.
+        Estos son los cuatro sorpresas que un simulador visual elimina de raíz.
+      </p>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="icon-badge amber">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+        </div>
+        <h3>La prioridad no salta la cola</h3>
+        <p>
+          En <code>moveToActive-11.lua</code>, el <strong>FIFO gana</strong>: el script hace
+          <code>RPOPLPUSH wait → active</code> y solo si la lista <code>wait</code> queda vacía
+          consulta el set priorizado con <code>ZPOPMIN</code>. Un job con <code>priority: 1</code>
+          added después de 20 jobs sin prioridad se procesa <strong>el último de los 21</strong>.
+        </p>
+        <p>
+          La razón: <code>priority: 0</code> significa "sin prioridad explícita" y va a la lista;
+          cualquier valor <code>&gt;0</code> va al ZSET. Son dos colas distintas, no un orden único.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon-badge">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
+        </div>
+        <h3>El score del ZSET está empaquetado</h3>
+        <p>
+          La prioridad no se guarda como número plano. <code>getPriorityScore</code> calcula
+          <code>priority * 0x100000000 + contador</code> para que el desempate dentro de la misma
+          prioridad sea FIFO. El <code>delayed</code> usa otro truco: el score es
+          <code>(timestamp + 1) * 0x1000 - 1</code>.
+        </p>
+        <p>
+          Por eso <code>ZRANGEBYSCORE delayed 0 (ts+1)*0x1000-1</code>Promotion puede traer
+          de golpe hasta 1000 jobs. Un simulador que dibuje el score real enseña esto sin leer el código.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon-badge rose">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        </div>
+        <h3>El lock expira y nadie te avisa</h3>
+        <p>
+          Un worker mantiene un lock con TTL sobre el job. Si el proceso muere, el lock caduca y
+          otro worker puede tomar el mismo job. <code>moveStalledJobsToWait-9.lua</code> lo rescata:
+          lo devuelve a <code>wait</code>, incrementa <code>stc</code>, y si supera
+          <code>maxStalledCount</code> lo marca como fallido con
+          <em>"job stalled more than allowable limit"</em>.
+        </p>
+        <p>
+          Es <strong>at-least-once delivery</strong>: un job puede ejecutarse dos veces. Tu processor
+          debe ser idempotente, y casi nadie lo internaliza hasta que le explota en producción.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon-badge">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+        </div>
+        <h3>La atomicidad vive en Lua, no en Node</h3>
+        <p>
+          Cada transición de estado es un script Lua que corre <strong>dentro</strong> de Redis:
+          mover a active, asignar lock, contar intentos, emitir el evento al stream y
+          renovar el marcador, todo en una sola operación indivisible.
+        </p>
+        <p>
+          Reescribir esa lógica en TypeScript — aunque "se vea igual" — abre carreras entre workers.
+          Ver los dos modelos competir en pantalla es el juego que más rápido lo enseña.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2. EL SIMULADOR ================= -->
+  <section id="simulador">
+    <div class="sec-head">
+      <span class="sec-num">02 — Prototipo funcional</span>
+      <h2>El simulador base, ya funcionando</h2>
+      <p>
+        Este es el motor que los seis juegos comparten: un reloj virtual, las mismas estructuras
+        Redis con sus scores reales y un registro de eventos. <strong>Reproduce la acción</strong>
+        con un clic, ajusta parámetros y vuelve a correr para comparar.
+      </p>
+    </div>
+
+    <div class="sim">
+      <div class="sim-head">
+        <h3><span class="sim-dot"></span> <span class="mono">bull:colas-demo</span> — estado de Redis</h3>
+        <div class="ctrls">
+          <button class="primary" id="btnRun">▶ Ejecutar</button>
+          <button class="sm" id="btnStep">⏭ Paso</button>
+          <button class="sm" id="btnReset">↺ Reiniciar</button>
+          <button class="sm" id="btnReplay">⟲ Repetir acción</button>
+        </div>
+      </div>
+
+      <div class="sim-body">
+        <div class="sim-cols">
+          <div class="lane-wrap">
+            <div class="lane">
+              <div class="lane-title">
+                <span><b>bull:colas-demo:wait</b> — lista FIFO · se drena COMPLETA antes que el set priorizado</span>
+                <span class="lane-type">LIST</span>
+              </div>
+              <div class="chips" id="laneWait"></div>
+            </div>
+
+            <div class="lane">
+              <div class="lane-title">
+                <span><b>bull:colas-demo:prioritized</b> — score = priority × 2³² + contador</span>
+                <span class="lane-type">ZSET</span>
+              </div>
+              <div class="chips" id="lanePrio"></div>
+            </div>
+
+            <div class="lane">
+              <div class="lane-title">
+                <span><b>bull:colas-demo:delayed</b> — score = timestamp × 4096 + offset secuencial del bucket</span>
+                <span class="lane-type">ZSET</span>
+              </div>
+              <div class="chips" id="laneDelayed"></div>
+            </div>
+
+            <div class="lane">
+              <div class="lane-title">
+                <span><b>bull:colas-demo:active</b> — con lock PX lockDuration · se renueva a lockDuration/2</span>
+                <span class="lane-type">LIST</span>
+              </div>
+              <div class="chips" id="laneActive"></div>
+            </div>
+
+            <div class="lane">
+              <div class="lane-title">
+                <span><b>completados / fallidos</b> — removeOnComplete / removeOnFail deciden si persisten</span>
+                <span class="lane-type">ZSET</span>
+              </div>
+              <div class="chips" id="laneDone"></div>
+            </div>
+          </div>
+
+          <div class="side">
+            <div class="panel">
+              <h4>Encolar job</h4>
+              <div class="field">
+                <label>Nombre</label>
+                <input type="text" id="jobName" value="enviar-email" />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>delay (ms)</label>
+                  <input type="number" id="jobDelay" value="0" min="0" step="500" />
+                </div>
+                <div class="field">
+                  <label>priority</label>
+                  <select id="jobPrio">
+                    <option value="0">0 — sin prioridad (LIST)</option>
+                    <option value="1">1 — máxima (nice)</option>
+                    <option value="5">5 — media</option>
+                    <option value="10">10 — baja</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label>Processor (ms de trabajo)</label>
+                <input type="number" id="jobWork" value="1200" min="100" step="100" />
+              </div>
+              <label class="check">
+                <input type="checkbox" id="jobFail" />
+                <span><b>Lanza excepción</b> — dispara el reintento con backoff y, al agotar los intentos, el estado failed</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" id="jobBlock" />
+                <span><b>Bloquea el event loop</b> — el timer de renovación del lock no dispara: el lock caduca y el job queda stalled</span>
+              </label>
+              <button class="primary" id="btnAdd" style="width:100%;margin-top:12px">+ Encolar</button>
+            </div>
+
+            <div class="panel">
+              <h4>Parámetros del worker</h4>
+              <div class="field-row">
+                <div class="field">
+                  <label>concurrency</label>
+                  <input type="number" id="pConc" value="2" min="1" max="8" />
+                </div>
+                <div class="field">
+                  <label>lockDuration (ms)</label>
+                  <input type="number" id="pLock" value="30000" min="1000" step="1000" />
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>maxStalledCount</label>
+                  <input type="number" id="pStall" value="1" min="0" max="5" />
+                </div>
+                <div class="field">
+                  <label>attempts</label>
+                  <input type="number" id="pAtt" value="1" min="1" max="5" />
+                </div>
+              </div>
+              <div class="field">
+                <label>Velocidad de simulación</label>
+                <select id="pSpeed">
+                  <option value="1">1× — leer cada paso</option>
+                  <option value="4" selected>4× — fluido</option>
+                  <option value="12">12× — rápido</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Métricas</h4>
+              <div class="stat-grid">
+                <div class="stat"><div class="v" id="mClock">0.0s</div><div class="l">reloj virtual</div></div>
+                <div class="stat"><div class="v" id="mDone">0</div><div class="l">completados</div></div>
+                <div class="stat"><div class="v" id="mFail">0</div><div class="l">fallidos</div></div>
+                <div class="stat"><div class="v" id="mWait">0</div><div class="l">en espera</div></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Stream de eventos (bull:…:events)</h4>
+              <div class="evtlog" id="evtLog"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><span class="swatch" style="background:rgba(47,111,94,.25)"></span> activo</span>
+          <span><span class="swatch" style="background:rgba(47,111,94,.08)"></span> completado</span>
+          <span><span class="swatch" style="background:rgba(201,123,63,.25)"></span> con prioridad &gt; 0</span>
+          <span><span class="swatch" style="background:rgba(176,99,103,.25)"></span> fallido / stalled</span>
+          <span><span class="mono">atm</span> = attemptsMade · <span class="mono">stc</span> = stalledCount</span>
+        </div>
+
+        <p class="sim-note">
+          <b>Cómo leerlo:</b> encola un job con <code>priority: 1</code> <em>después</em> de varios
+          sin prioridad y pulsa <b>Ejecutar</b> — el job prioritario no adelanta a los demás.
+          Marca <b>Bloquea el event loop</b> con un <code>lockDuration</code> corto para ver el job
+          quedar <code>stalled</code>, volver a <code>wait</code> y — al superar
+          <code>maxStalledCount</code> — fallar de forma permanente.
+          Luego pulsa <b>Repetir acción</b>: el mismo script corre otra vez con parámetros distintos
+          y el log deja ver exactamente qué cambió. Esa comparación es el corazón del método.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3. LOS JUEGOS ================= -->
+  <section id="juegos">
+    <div class="sec-head">
+      <span class="sec-num">03 — Catálogo</span>
+      <h2>Seis juegos, seis capas de la infraestructura</h2>
+      <p>
+        Cada uno ataca un mecanismo distinto de BullMQ y aporta una forma distinta de repetición.
+        Todos comparten el mismo motor de simulación, de modo que el segundo juego arranca con el
+        primero ya construido.
+      </p>
+    </div>
+
+    <div class="grid g2" style="margin-bottom:18px">
+
+      <!-- JUEGO 1 -->
+      <div class="game-card">
+        <h3><span class="num">JUEGO 01</span> El Puerto de Redis</h3>
+        <p>
+          Un muelle con tres zonas visibles: <code>wait</code>, <code>prioritized</code> y
+          <code>delayed</code>. Los jobs llegan como contenedores y tú decides en qué zona
+          entran, con qué score y con qué prioridad.
+        </p>
+        <div class="mech">
+          <p><b>Mecánica:</b> llega una oleada de contenedores con metas de entrega. Colocas cada
+          job en una zona arrastrándolo. Puntos por no romper el orden FIFO dentro de <code>wait</code>
+          y por mantener el score ZSET bien formado. Pierdes si el score se desordena.</p>
+        </div>
+        <div class="mech">
+          <p><b>Enseña:</b> la separación LIST/ZSET, el score empaquetado
+          <code>priority × 2³² + contador</code>, la promoción de <code>delayed</code> a
+          <code>wait</code>, y por qué la prioridad no es "saltar la cola".</p>
+        </div>
+        <div class="tagrow">
+          <span class="tag p">wait / prioritized / delayed</span>
+          <span class="tag a">score ZSET</span>
+          <span class="tag">promoteDelayedJobs</span>
+        </div>
+        <div class="stackline">
+          <b>HTML + Canvas 2D</b> · repeat: <b>rebobinar oleada</b> y reintentar con otro reparto
+        </div>
+      </div>
+
+      <!-- JUEGO 2 -->
+      <div class="game-card">
+        <h3><span class="num">JUEGO 02</span> El Guardián del Lock</h3>
+        <p>
+          Eres el lock. Cada worker tiene un candado con TTL sobre el job que procesa.
+          Si el worker se cuelga, el lock caduca y otro worker puede robarle el job.
+        </p>
+        <div class="mech">
+          <p><b>Mecánica:</b> el juego es el latido. Cada worker debe pulsar "renovar lock" antes de que
+          caduque. Puedes matar un worker a propósito y observar el relevo. Ganas por detectar
+          correctamente los <code>stalled</code> y por empujar el <code>stc</code> por encima
+          de <code>maxStalledCount</code> solo cuando corresponde.</p>
+        </div>
+        <div class="mech">
+          <p><b>Enseña:</b> <code>lockDuration</code>, renovación a la mitad del TTL,
+          <code>moveStalledJobsToWait</code>, el contador <code>stc</code>, y que la entrega es
+          <em>at-least-once</em> → el processor debe ser idempotente.</p>
+        </div>
+        <div class="tagrow">
+          <span class="tag d">locks / stalled</span>
+          <span class="tag a">maxStalledCount</span>
+          <span class="tag">PX / SET NX</span>
+        </div>
+        <div class="stackline">
+          <b>HTML + Canvas + requestAnimationFrame</b> · repeat: <b>revancha con otro lockDuration</b>
+        </div>
+      </div>
+
+      <!-- JUEGO 3 -->
+      <div class="game-card">
+        <h3><span class="num">JUEGO 03</span> La Carrera de las Transiciones</h3>
+        <p>
+          Dos implementaciones compiten por los mismos jobs: la <strong>real</strong> (scripts Lua
+          atómicos dentro de Redis) y una <strong>naive</strong> escrita en el cliente, con lecturas
+          y escrituras separadas.
+        </p>
+        <div class="mech">
+          <p><b>Mecánica:</b> enciendes las dos implementaciones a la vez sobre la misma cola.
+          La naive duplica jobs, pierde jobs y deja locks colgando. Tu processor tiene que
+          deducir qué script Lua invocó el estado que observas.</p>
+        </div>
+        <div class="mech">
+          <p><b>Enseña:</b> por qué Redis ejecuta lógica, por qué los scripts son atómicos,
+          qué significa <code>moveToActive</code> como una unidad indivisible, y cómo una
+          reimplementación "equivalente" en Node introduce carreras.</p>
+        </div>
+        <div class="tagrow">
+          <span class="tag p">Lua / atomicidad</span>
+          <span class="tag">script-loader</span>
+          <span class="tag d">race conditions</span>
+        </div>
+        <div class="stackline">
+          <b>Three.js</b> — dos "servidores" enfrentados, con cilindros visuales · repeat: <b>carrera resimulada con otra semilla</b>
+        </div>
+      </div>
+
+      <!-- JUEGO 4 -->
+      <div class="game-card">
+        <h3><span class="num">JUEGO 04</span> El Reloj de los Schedulers</h3>
+        <p>
+          <code>upsertJobScheduler</code> es idempotente por diseño: llamarlo dos veces con el
+          mismo id no duplica nada. Ese detalle se aprende jugando contra el reloj de 24 horas.
+        </p>
+        <div class="mech">
+          <p><b>Mecánica:</b> una rueda de 24 horas. Colocas jobs recurrentes y eliges
+          <code>every</code> o <code>pattern</code> cron. Compara con el reloj real:
+          <code>every</code> se alinea al reloj, no al momento en que lo configuraste.
+          Los jobs que se solapan se pisan.</p>
+        </div>
+        <div class="mech">
+          <p><b>Enseña:</b> <code>upsertJobScheduler</code>, alineación al reloj, el offset,
+          <code>pattern</code> cron de 6 campos, la plantilla del job y por qué
+          <code>repeat</code> está deprecado desde 5.16.</p>
+        </div>
+        <div class="tagrow">
+          <span class="tag p">job schedulers</span>
+          <span class="tag a">cron / every</span>
+          <span class="tag">upsert idempotente</span>
+        </div>
+        <div class="stackline">
+          <b>HTML + Canvas</b> (reloj radial) · repeat: <b>correr el mismo día 60 veces</b>
+        </div>
+      </div>
+
+      <!-- JUEGO 5 -->
+      <div class="game-card">
+        <h3><span class="num">JUEGO 05</span> El Muro de la API</h3>
+        <p>
+          Una API externa con límite de peticiones. Tus workers la golpean en paralelo.
+          El <code>limiter</code> de BullMQ es <strong>global por cola</strong>, no por worker:
+          todos compiten por el mismo cubo.
+        </p>
+        <div class="mech">
+          <p><b>Mecánica:</b> ajustas <code>limiter.max</code>, <code>limiter.duration</code> y
+          la concurrencia para atravesar el muro. Si el límite se pasa, el proveedor te corta y
+          pierdes. El cubo se llena con <code>INCR</code> + <code>PEXPIRE</code>.</p>
+        </div>
+        <div class="mech">
+          <p><b>Enseña:</b> rate limiting global vs. por worker, <code>getRateLimitTTL</code>,
+          el early-return cuando <code>expireTime &gt; 0</code>, y cómo <code>concurrency</code>
+          mal puesto desperdicia slots.</p>
+        </div>
+        <div class="tagrow">
+          <span class="tag a">limiter global</span>
+          <span class="tag p">concurrencia</span>
+          <span class="tag">INCR / PEXPIRE</span>
+        </div>
+        <div class="stackline">
+          <b>HTML + Canvas</b> (medidor de cubo) · repeat: <b>reintentar con otra tasa</b>
+        </div>
+      </div>
+
+      <!-- JUEGO 6 -->
+      <div class="game-card">
+        <h3><span class="num">JUEGO 06</span> El Árbol de Dependencias</h3>
+        <p>
+          <code>FlowProducer</code> añade un árbol entero de forma atómica. El padre queda en
+          <code>waiting-children</code> hasta que todos sus hijos completan.
+        </p>
+        <div class="mech">
+          <p><b>Mecánica:</b> construyes un árbol de trabajo. Alishes hijo falla, el padre puede
+          fallar también o ignorar ese hijo (<code>ignoreDependencyOnFailure</code>). El nivel
+          de anidamiento es libre y los hijos viven en colas distintas.</p>
+        </div>
+        <div class="mech">
+          <p><b>Enseña:</b> <code>waiting-children</code>, <code>releaseParentIfNoPendingDependencies</code>,
+          <code>getChildrenValues()</code>, la atomicidad del <code>add</code> del árbol completo
+          y el fallo en cascada.</p>
+        </div>
+        <div class="tagrow">
+          <span class="tag p">flows / DAG</span>
+          <span class="tag d">fallo en cascada</span>
+          <span class="tag">waiting-children</span>
+        </div>
+        <div class="stackline">
+          <b>Three.js</b> (árbol 3D) · repeat: <b>podar una rama y volver a sembrar</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p>
+        <strong>Nota sobre el stack:</strong> HTML + Canvas 2D cubre los juegos 1, 2, 4 y 5 —
+        son simetrías bidimensionales y DOM/Canvas es más preciso y ligero. Three.js entra donde
+        la <strong>tercera dimensión aporta información real</strong>: la carrera de transiciones
+        (dos mundos enfrentados) y el árbol de dependencias (profundidad y jerarquía). Usar WebGL
+        donde basta con SVG es sobreingeniería; evitarlo en 4 de 6 juegos mantiene el bundle
+        por debajo de 100 KB y el arranque instantáneo.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 4. MOTOR COMPARTIDO ================= -->
+  <section id="motor">
+    <div class="sec-head">
+      <span class="sec-num">04 — Arquitectura</span>
+      <h2>Un solo motor, seis juegos encima</h2>
+      <p>
+        La repetición fiable exige determinismo. El motor central lo garantiza: reloj virtual,
+        sin <code>Math.random</code> sin semilla, y un historial de eventos que permite
+        rebobinar cualquier partida.
+      </p>
+    </div>
+
+    <div class="grid g2">
+      <div>
+        <h3 style="margin-bottom:14px">Capas del motor</h3>
+        <ol class="timeline">
+          <li>
+            <span class="when">capa 0</span>
+            <b>Reloj virtual</b>
+            <p>El tiempo avanza por ticks discretos, no por <code>Date.now()</code>. Un tick = un
+            paso determinista. Cambiar la velocidad de reproducción no cambia el resultado.</p>
+          </li>
+          <li>
+            <span class="when">capa 1</span>
+            <b>Store de Redis simulado</b>
+            <p>Implementa <code>LPUSH</code>, <code>RPOPLPUSH</code>, <code>ZADD</code>,
+            <code>ZPOPMIN</code>, <code>ZRANGEBYSCORE</code>, <code>INCR</code>,
+            <code>PEXPIRE</code>, <code>SET ... PX</code>, <code>XADD</code> y
+            <code>HINCRBY</code> con la <strong>semántica exacta</strong> de BullMQ,
+            incluidos los scores empaquetados.</p>
+          </li>
+          <li>
+            <span class="when">capa 2</span>
+            <b>Intérprete de Lua</b>
+            <p>Los scripts se ejecutan como pasos atómicos contra el store. Aquí es donde
+            nace la diferencia real: si reimplementas la lógica en el cliente, no eres el mismo
+            sistema — y el juego 3 lo demuestra.</p>
+          </li>
+          <li>
+            <span class="when">capa 3</span>
+            <b>Historial y replay</b>
+            <p>Cada transición queda grabada con tick, script, keys tocadas y resultado.
+            Eso habilita rebobinar, cambiar un parámetro y reejecutar — la palanca de
+            repetición que comparten los seis juegos.</p>
+          </li>
+        </ol>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:14px">Por qué el replay importa</h3>
+        <div class="card" style="margin-bottom:16px">
+          <p>
+            Aprender bullMQ no es memorizar la API: es construir un <strong>modelo mental
+            predictivo</strong>. Ese modelo se corrige con el contraste entre lo que esperabas
+            y lo que pasó. Un simulador que solo corre hacia adelante no permite ese contraste;
+            uno que rebobina y compara, sí.
+          </p>
+          <p>
+            Por eso cada juego tiene un botón de repetición con una variable distinta:
+            el reparto de prioridades, el TTL del lock, la semilla de la carrera, la hora del
+            día, la tasa del límite, la rama del árbol.
+          </p>
+        </div>
+
+        <h3 style="margin-bottom:14px">Cómo verificar el simulador</h3>
+        <p style="color:var(--ink2);font-size:15px;margin:0 0 14px">
+          Un simulador que miente es peor que no tener simulador. La validación es
+          straightforward porque BullMQ es observable desde fuera.
+        </p>
+        <pre><span class="c">// Test de paridad: mismo escenario, Redis real vs. simulador</span>
+<span class="k">const</span> real = <span class="k">await</span> runAgainstRedis(scenario);
+<span class="k">const</span> sim  = runAgainstSim(scenario);
+
+expect(sim.states).toEqual(real.states);   <span class="c">// wait/prioritized/…</span>
+expect(sim.scores).toEqual(real.scores);   <span class="c">// score exacto del ZSET</span>
+expect(sim.events).toEqual(real.events);   <span class="c">// stream XADD</span></pre>
+        <p style="color:var(--muted);font-size:13.5px;margin:12px 0 0">
+          Con Docker y Redis real puedes correr exactamente los mismos escenarios del juego y
+          comparar estado por estado. La suite de paridad es la que garantiza que el
+          simulador enseña BullMQ y no una caricatura.
+        </p>
+      </div>
+    </div>
+
+    <div style="margin-top:26px">
+      <h3 style="margin-bottom:12px">Estado actual del prototipo</h3>
+      <p style="color:var(--ink2);font-size:15px;margin:0 0 12px">
+        El simulador de esta página ya está verificado con un arnés de pruebas que extrae su
+        motor y lo ejecuta sin navegador — <code>test-motor-bullmq.js</code>, con 30 aserciones
+        sobre la semántica real de los scripts Lua.
+      </p>
+      <pre><span class="c">$ node test-motor-bullmq.js</span>
+[1] La lista wait se drena COMPLETA antes que el set priorizado
+  <span class="k">PASS</span>  el job prioritario se activa el último de los 4
+  <span class="k">PASS</span>  los tres sin prioridad van primero, en FIFO
+[2] Score del set priorizado = priority × 2^32 + contador
+  <span class="k">PASS</span>  priority 1 -&gt; score 1×2^32 + 1
+[3] Delayed: score = timestamp × 4096 + offset
+  <span class="k">PASS</span>  score = timestamp × 4096
+[4] Retry con backoff exponencial y fallo definitivo
+  <span class="k">PASS</span>  tras agotar los intentos queda failed
+[5] Stalled: lock sin renovar -&gt; vuelve a wait
+  <span class="k">PASS</span>  con stc=1 y maxStalledCount=1 NO se falla todavia
+  <span class="k">PASS</span>  el motivo es "job stalled more than allowable limit"
+[6] attemptsMade (atm) vs attemptsStarted (ats)
+  <span class="k">PASS</span>  atm=1 tras completarse
+
+  <span class="k">30 pasaron, 0 fallaron</span></pre>
+      <p style="color:var(--muted);font-size:13.5px;margin:12px 0 0">
+        Las aserciones están ancladas al código fuente de los scripts, no a la expectativa del
+        autor: el orden FIFO-antes-que-prioridad viene de <code>moveToActive-11.lua</code>, el
+        score de <code>getPriorityScore.lua</code>, el de delayed de
+        <code>getDelayedScore.lua</code> y el rescate de <code>moveStalledJobsToWait-9.lua</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 5. PLAN DE TRABAJO ================= -->
+  <section id="plan">
+    <div class="sec-head">
+      <span class="sec-num">05 — Ejecución</span>
+      <h2>Orden de construcción</h2>
+      <p>
+        Empieza por el motor y el simulador que ya tienes, no por un juego. Cada entrega
+        deja algo usable y las decisiones de diseño se validan con usuarios reales.
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Fase</th><th>Qué se entrega</th><th>Incluye</th><th>Desbloquea</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>F0</b></td>
+          <td>Motor + store Redis simulado</td>
+          <td>Reloj virtual, primitivas Redis, scores reales, historial, replay</td>
+          <td>Suite de paridad contra Redis real en Docker</td>
+        </tr>
+        <tr>
+          <td><b>F1</b></td>
+          <td>Simulador web + Juego 01</td>
+          <td>UI del prototipo de arriba, <code>wait</code>/<code>prioritized</code>/<code>delayed</code> con scores visibles, rebobinado</td>
+          <td>Validar el modelo mental con usuarios antes de multiplicar juegos</td>
+        </tr>
+        <tr>
+          <td><b>F2</b></td>
+          <td>Juegos 02, 04 y 05</td>
+          <td>Locks y stalled, schedulers con reloj, rate limiter global</td>
+          <td>Los tres mecanismos que más se confunden en producción</td>
+        </tr>
+        <tr>
+          <td><b>F3</b></td>
+          <td>Juegos 03 y 06 en Three.js</td>
+          <td>Carrera de transiciones, árbol de dependencias</td>
+          <td>Atomicidad y flows, los dos temas de mayor profundidad</td>
+        </tr>
+        <tr>
+          <td><b>F4</b></td>
+          <td>Modo retos</td>
+          <td>Retos guiados, casos que rompen la intuición, ranking local</td>
+          <td>Uso sostenido más allá del tutorial</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="grid g3" style="margin-top:20px">
+      <div class="card">
+        <div class="icon-badge">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h3>Stack recomendado</h3>
+        <p class="mono" style="font-size:13px">
+          TypeScript · Vite · Canvas 2D<br />
+          Three.js solo en J03 y J06<br />
+          Node + Docker para la paridad
+        </p>
+      </div>
+      <div class="card">
+        <div class="icon-badge amber">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9"/></svg>
+        </div>
+        <h3>Sin servidor</h3>
+        <p>
+          Todo corre en el navegador. La paridad con Redis real se ejecuta en CI, no en la
+          experiencia del jugador. Cero infraestructura, cero fricción para probar.
+        </p>
+      </div>
+      <div class="card">
+        <div class="icon-badge rose">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        </div>
+        <h3>Riesgo principal</h3>
+        <p>
+          Que el simulador enseñe <em>una versión simplificada</em>. Se mitiga con la suite de
+          paridad: si el score, el estado y el stream no coinciden con Redis real, el build falla.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 6. REFERENCIAS ================= -->
+  <section id="refs">
+    <div class="sec-head">
+      <span class="sec-num">06 — Fuentes</span>
+      <h2>De dónde sale cada afirmación</h2>
+    </div>
+    <ul class="refs">
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/guide/architecture.md" target="_blank" rel="noopener">Architecture — ciclo de vida, backends y semántica del estado</a>
+        <span>github.com/taskforcesh/bullmq · docs/gitbook/guide/architecture.md</span>
+      </li>
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/moveToActive-11.lua" target="_blank" rel="noopener">moveToActive-11.lua — FIFO antes que prioridad, rate limit, paused</a>
+        <span>github.com/taskforcesh/bullmq · src/commands/moveToActive-11.lua</span>
+      </li>
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/moveStalledJobsToWait-9.lua" target="_blank" rel="noopener">moveStalledJobsToWait-9.lua — rescate de stalled y contador stc</a>
+        <span>github.com/taskforcesh/bullmq · src/commands/moveStalledJobsToWait-9.lua</span>
+      </li>
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/includes/getPriorityScore.lua" target="_blank" rel="noopener">getPriorityScore.lua — priority × 2³² + contador</a>
+        <span>github.com/taskforcesh/bullmq · src/commands/includes/getPriorityScore.lua</span>
+      </li>
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/includes/promoteDelayedJobs.lua" target="_blank" rel="noopener">promoteDelayedJobs.lua — promoción y score del delayed</a>
+        <span>github.com/taskforcesh/bullmq · src/commands/includes/promoteDelayedJobs.lua</span>
+      </li>
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/addStandardJob-9.lua" target="_blank" rel="noopener">addStandardJob-9.lua — LPUSH/RPUSH, lifo, deduplicación</a>
+        <span>github.com/taskforcesh/bullmq · src/commands/addStandardJob-9.lua</span>
+      </li>
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/addPrioritizedJob-9.lua" target="_blank" rel="noopener">addPrioritizedJob-9.lua — ZADD al set priorizado</a>
+        <span>github.com/taskforcesh/bullmq · src/commands/addPrioritizedJob-9.lua</span>
+      </li>
+      <li>
+        <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/includes/prepareJobForProcessing.lua" target="_blank" rel="noopener">prepareJobForProcessing.lua — lock, límite y HINCRBY de intentos</a>
+        <span>github.com/taskforcesh/bullmq · src/commands/includes/prepareJobForProcessing.lua</span>
+      </li>
+      <li>
+        <a href="https://bullmq.io/news/231204/better-queue-markers/" target="_blank" rel="noopener">Better queue markers in BullMQ v5 — el ZSET marker y el fin de BRPOPLPUSH</a>
+        <span>bullmq.io/news/231204/better-queue-markers</span>
+      </li>
+      <li>
+        <a href="https://docs.bullmq.io/guide/flows/" target="_blank" rel="noopener">Flows — dependencias padre/hijo y waiting-children</a>
+        <span>docs.bullmq.io/guide/flows</span>
+      </li>
+      <li>
+        <a href="https://docs.bullmq.io/changelogs/changelog-v5" target="_blank" rel="noopener">Changelog v5 — upsertJobScheduler, fin de QueueScheduler, cambios de 5.81.x</a>
+        <span>docs.bullmq.io/changelogs/changelog-v5</span>
+      </li>
+      <li>
+        <a href="https://docs.bullmq.io/guide/jobs/stalled" target="_blank" rel="noopener">Stalled — lockDuration, maxStalledCount y processors sandboxed</a>
+        <span>docs.bullmq.io/guide/jobs/stalled</span>
+      </li>
+    </ul>
+  </section>
+
+  <footer>
+    Propuesta de juegos interactivos para aprender la infraestructura de BullMQ sobre Redis.
+    Los scripts Lua citados corresponden al <span class="mono">master</span> de
+    <span class="mono">taskforcesh/bullmq</span> (v5.81.x); el simulador debe validarse contra
+    la versión exacta que use tu proyecto.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Estado ----------
+  var S = {
+    clock: 0,            // ms virtuales
+    tick: 0,
+    jobs: {},            // id -> job
+    order: [],           // ids en orden de creación
+    wait: [],            // LIST  (FIFO)
+    prio: [],            // ZSET  {id, score, prio, seq}
+    delayed: [],         // ZSET  {id, score, at, seq}
+    active: [],          // LIST  {id, worker, workLeft, total}
+    done: [],            // completados
+    failed: [],          // fallidos
+    events: [],
+    prioCounter: 0,
+    delayedCounter: 0,
+    jobCounter: 0,
+    bucket: {},
+    running: false,
+    timer: null,
+    speed: 4,
+    lastAction: null,    // para "repetir acción"
+    replayCount: 0
+  };
+
+  var TICK_MS = 100;
+
+  // ---------- Persistencia ----------
+  function save(){ try{ localStorage.setItem("bullmq-sim", JSON.stringify({clock:S.clock,tick:S.tick,jobs:S.jobs,order:S.order,wait:S.wait,prio:S.prio,delayed:S.delayed,active:S.active,done:S.done,failed:S.failed,events:S.events,prioCounter:S.prioCounter,delayedCounter:S.delayedCounter,jobCounter:S.jobCounter,bucket:S.bucket,lastAction:S.lastAction})); }catch(e){} }
+  function load(){
+    try{
+      var raw = localStorage.getItem("bullmq-sim");
+      if(!raw) return false;
+      var d = JSON.parse(raw);
+      ["clock","tick","jobs","order","wait","prio","delayed","active","done","failed","events","prioCounter","delayedCounter","jobCounter","bucket","lastAction"].forEach(function(k){ if(d[k]!==undefined) S[k]=d[k]; });
+      return true;
+    }catch(e){ return false; }
+  }
+  function clearStore(){ try{ localStorage.removeItem("bullmq-sim"); }catch(e){} }
+
+  // ---------- Utilidades ----------
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function fmt(ms){ return (ms/1000).toFixed(1) + "s"; }
+
+  function logEvent(kind, text){
+    S.events.push({ t: S.clock, kind: kind, text: text });
+    if(S.events.length > 200) S.events.splice(0, S.events.length - 200);
+  }
+
+  // ---------- Core BullMQ (simulado, semántica fiel) ----------
+  function addJob(name, delay, priority, work, willFail, blockLoop){
+    var id = String(++S.jobCounter);
+    var job = { id: id, name: name, priority: priority|0, delay: delay|0, work: work|0,
+                willFail: !!willFail, blockLoop: !!blockLoop,
+                state: "waiting", attemptsMade: 0, attemptsStarted: 0, stalled: 0,
+                score: null, at: null };
+    S.jobs[id] = job;
+    S.order.push(id);
+
+    if(job.delay > 0){
+      // getDelayedScore: score = delayedTimestamp * 0x1000 + offset secuencial
+      // (el offset se incrementa dentro del bucket del timestamp para conservar FIFO)
+      var ts = S.clock + job.delay;
+      var bucket = S.bucket[ts] || 0;
+      S.bucket[ts] = bucket + 1;
+      var score = ts * 4096 + bucket;
+      job.score = score;
+      job.at = ts;
+      job.state = "delayed";
+      S.delayed.push({ id: id, score: score, at: ts });
+      logEvent("add", "delayed  id=" + id + "  score=" + score + " (ts=" + ts + " × 4096 + " + bucket + ")");
+    } else if(job.priority > 0){
+      // addPrioritizedJob: ZADD prioritized con score = priority * 0x100000000 + contador
+      // el contador es un INCR global por cola: empieza en 1 y desempata por FIFO
+      var pc = ++S.prioCounter;
+      var pscore = job.priority * 4294967296 + (pc % 4294967296);
+      job.score = pscore;
+      job.state = "prioritized";
+      S.prio.push({ id: id, score: pscore, prio: job.priority });
+      logEvent("add", "prioritized id=" + id + "  score=" + pscore + " (prio " + job.priority + " × 2^32 + " + pc + ")");
+    } else {
+      // addStandardJob: LPUSH wait (FIFO) -> el pop es por el final
+      S.wait.push(id);
+      job.state = "waiting";
+      logEvent("add", "waiting  id=" + id + "  LPUSH bull:colas-demo:wait");
+    }
+    return job;
+  }
+
+  // moveToActive: primero drena wait (RPOPLPUSH), luego priorizado (ZPOPMIN)
+  function moveToActive(workerId){
+    var lockDuration = numOr($("pLock").value, 30000);
+    var id = null;
+    if(S.wait.length > 0){
+      id = S.wait.shift();                       // RPOPLPUSH wait -> active
+      logEvent("move", "RPOPLPUSH wait→active   id=" + id);
+    } else if(S.prio.length > 0){
+      S.prio.sort(function(a,b){ return a.score - b.score; });
+      var p = S.prio.shift();                     // ZPOPMIN prioritized
+      id = p.id;
+      logEvent("move", "ZPOPMIN prioritized→active id=" + id + "  score=" + p.score);
+    }
+    if(!id) return null;
+
+    var job = S.jobs[id];
+    job.state = "active";
+    job.attemptsStarted++;                        // HINCRBY ats 1 (prepareJobForProcessing)
+    job.lockRenewAt = S.clock + lockDuration / 2;
+    job.lockExpiresAt = S.clock + lockDuration;
+    S.active.push({ id: id, worker: workerId, workLeft: job.work, total: job.work });
+    logEvent("move", "SET lock:id PX " + lockDuration + "  ats=" + job.attemptsStarted);
+    return job;
+  }
+
+  function finishJob(entry){
+    var job = S.jobs[entry.id];
+    job.attemptsMade++;                            // HINCRBY atm 1 (moveToFinished)
+    if(job.willFail){
+      failJob(entry, "error simulado en el processor");
+      return;
+    }
+    job.state = "completed";
+    S.done.push(job.id);
+    logEvent("fin", "completed id=" + job.id + "  (XADD event=completed, atm=" + job.attemptsMade + ")");
+  }
+
+  // El job lanza excepción: si le quedan intentos, vuelve a delayed con backoff.
+  function failJob(entry, reason){
+    var job = S.jobs[entry.id];
+    var attempts = numOr($("pAtt").value, 1);
+    if(job.attemptsMade < attempts){
+      // moveToDelayed: reintento con backoff exponencial
+      var backoff = Math.min(1000 * Math.pow(2, job.attemptsMade - 1), 8000);
+      var ts = S.clock + backoff;
+      var bucket = S.bucket[ts] || 0;
+      S.bucket[ts] = bucket + 1;
+      job.score = ts * 4096 + bucket;
+      job.at = ts;
+      job.state = "delayed";
+      S.delayed.push({ id: job.id, score: job.score, at: ts });
+      logEvent("err", "failed id=" + job.id + " → retry en " + backoff + "ms (atm=" + job.attemptsMade + "/" + attempts + ")");
+    } else {
+      job.state = "failed";
+      S.failed.push(job.id);
+      logEvent("err", "failed id=" + job.id + "  " + reason + " (atm=" + job.attemptsMade + ")");
+    }
+  }
+
+  // ---------- Simulación de un tick ----------
+  function step(){
+    S.clock += TICK_MS;
+    S.tick++;
+
+    // promoteDelayedJobs: ZRANGEBYSCORE delayed 0 (timestamp+1)*0x1000-1
+    var limit = (S.clock + 1) * 4096 - 1;
+    var ready = S.delayed.filter(function(d){ return d.score <= limit; });
+    if(ready.length){
+      S.delayed = S.delayed.filter(function(d){ return d.score > limit; });
+      ready.forEach(function(d){
+        var job = S.jobs[d.id];
+        if(job.priority === 0){
+          S.wait.push(job.id);                     // LPUSH wait
+          job.state = "waiting";
+          logEvent("move", "promoteDelayed → LPUSH wait  id=" + job.id + "  (prev=delayed)");
+        } else {
+          var pc = ++S.prioCounter;
+          var ps = job.priority * 4294967296 + (pc % 4294967296);
+          job.score = ps;
+          job.state = "prioritized";
+          S.prio.push({ id: job.id, score: ps, prio: job.priority });
+          logEvent("move", "promoteDelayed → ZADD prioritized  id=" + job.id + "  score=" + ps);
+        }
+      });
+    }
+
+    // Actualizar trabajo en curso
+    var stillActive = [];
+    S.active.forEach(function(entry){
+      var job = S.jobs[entry.id];
+      entry.workLeft -= TICK_MS;
+      if(entry.workLeft <= 0){
+        finishJob(entry);
+        return;
+      }
+      // Renovación del lock a lockDuration/2.
+      // Si el processor bloquea el event loop, el timer de renovación no dispara
+      // y el lock caduca: eso es exactamente lo que produce un stalled.
+      var lockDuration = numOr($("pLock").value, 30000);
+      if(!job.blockLoop && S.clock >= job.lockRenewAt){
+        job.lockRenewAt = S.clock + lockDuration / 2;
+        job.lockExpiresAt = S.clock + lockDuration;
+        logEvent("move", "renueva lock id=" + job.id + "  PX " + lockDuration);
+      }
+      stillActive.push(entry);
+    });
+    S.active = stillActive;
+
+    // Check de stalled: el lock expiró y ya no existe -> el job vuelve a wait.
+    // (En BullMQ el check corre cada ~30s; aquí se evalúa en cada tick.)
+    var maxStall = numOr($("pStall").value, 1);
+    var expired = S.active.filter(function(e){ var j = S.jobs[e.id]; return S.clock > j.lockExpiresAt; });
+    if(expired.length){
+      S.active = S.active.filter(function(e){ return expired.indexOf(e) === -1; });
+      expired.forEach(function(e){
+        var job = S.jobs[e.id];
+        job.stalled++;                              // HINCRBY stc 1
+        if(job.stalled > maxStall){
+          job.state = "failed";
+          S.failed.push(job.id);
+          logEvent("err", "stalled id=" + job.id + "  stc=" + job.stalled + " > maxStalledCount=" + maxStall + " → FAILED (job stalled more than allowable limit)");
+        } else {
+          job.state = "waiting";
+          S.wait.unshift(job.id);                  // RPUSH -> se reintenta de inmediato
+          logEvent("err", "stalled id=" + job.id + "  stc=" + job.stalled + " → devuelto a wait (XADD event=stalled)");
+        }
+      });
+    }
+
+    // Workers: ATP — en cola por concurrencia
+    var conc = numOr($("pConc").value, 2);
+    var activeCount = S.active.length;
+    for(var w = 0; w < conc && activeCount < conc; w++){
+      var job = moveToActive(w);
+      if(!job) break;
+      activeCount++;
+    }
+  }
+
+  function numOr(v, d){ var n = parseInt(v, 10); return isNaN(n) ? d : n; }
+
+  // ---------- Render ----------
+  function chipHtml(id, cls, extra){
+    var job = S.jobs[id];
+    if(!job) return "";
+    var pri = job.priority > 0 ? '<span class="pri">p' + job.priority + '</span>' : "";
+    var flags = "";
+    if(job.blockLoop) flags += ' <span class="flag cpu">bloquea</span>';
+    if(job.willFail)  flags += ' <span class="flag fail">falla</span>';
+    if(job.attemptsMade > 0) flags += ' <span class="jid">atm:' + job.attemptsMade + '</span>';
+    if(job.stalled > 0) flags += ' <span class="jid">stc:' + job.stalled + '</span>';
+    var extraHtml = extra || "";
+    return '<span class="jchip ' + (cls||"") + '">' +
+      '<span class="jid">#' + id + '</span>' +
+      '<span class="jname">' + esc(job.name) + '</span>' + pri + flags + extraHtml + '</span>';
+  }
+
+  function render(){
+    // wait
+    var w = $("laneWait");
+    w.innerHTML = S.wait.length
+      ? S.wait.map(function(id){ return chipHtml(id, ""); }).join("")
+      : '<span class="empty">vacía</span>';
+
+    // prioritized (ZSET: ordenado por score)
+    var p = $("lanePrio");
+    var ps = S.prio.slice().sort(function(a,b){ return a.score - b.score; });
+    p.innerHTML = ps.length
+      ? ps.map(function(o){ return chipHtml(o.id, "", ' <span class="jid">score:' + o.score + '</span>'); }).join("")
+      : '<span class="empty">vacío</span>';
+
+    // delayed
+    var d = $("laneDelayed");
+    var ds = S.delayed.slice().sort(function(a,b){ return a.score - b.score; });
+    d.innerHTML = ds.length
+      ? ds.map(function(o){
+          var job = S.jobs[o.id];
+          var eta = Math.max(0, o.at - S.clock);
+          return chipHtml(o.id, "", ' <span class="jid">score:' + o.score + ' · en ' + fmt(eta) + '</span>');
+        }).join("")
+      : '<span class="empty">vacío</span>';
+
+    // active
+    var a = $("laneActive");
+    a.innerHTML = S.active.length
+      ? S.active.map(function(e){
+          var pct = e.total > 0 ? Math.round((1 - e.workLeft / e.total) * 100) : 100;
+          return chipHtml(e.id, "active", ' <span class="bar"><i style="width:' + pct + '%"></i></span>');
+        }).join("")
+      : '<span class="empty">vacío</span>';
+
+    // completados / fallidos
+    var dn = $("laneDone");
+    var parts = [];
+    S.done.forEach(function(id){ parts.push(chipHtml(id, "done")); });
+    S.failed.forEach(function(id){ parts.push(chipHtml(id, "fail")); });
+    dn.innerHTML = parts.length ? parts.join("") : '<span class="empty">ninguno</span>';
+
+    // métricas
+    $("mClock").textContent = fmt(S.clock);
+    $("mDone").textContent = S.done.length;
+    $("mFail").textContent = S.failed.length;
+    $("mWait").textContent = S.wait.length + S.prio.length + S.delayed.length;
+
+    // log
+    var log = $("evtLog");
+    var html = S.events.slice(-60).map(function(e){
+      var cls = e.kind === "add" ? "e-add" : e.kind === "move" ? "e-move" : e.kind === "fin" ? "e-fin" : "e-err";
+      return '<div><span class="t">' + fmt(e.t).padStart(6, " ") + '</span> <span class="' + cls + '">' + esc(e.text) + '</span></div>';
+    }).join("");
+    log.innerHTML = html || '<div><span class="t">— sin eventos —</span></div>';
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // ---------- Controles ----------
+  function tickLoop(){
+    if(!S.running) return;
+    for(var i = 0; i < S.speed; i++) step();
+    render();
+    save();
+    S.timer = setTimeout(tickLoop, 60);
+  }
+
+  function start(){
+    if(S.running) return;
+    S.running = true;
+    $("btnRun").textContent = "⏸ Pausar";
+    $("btnRun").classList.add("primary");
+    tickLoop();
+  }
+  function stop(){
+    S.running = false;
+    if(S.timer){ clearTimeout(S.timer); S.timer = null; }
+    $("btnRun").textContent = "▶ Ejecutar";
+  }
+  function toggle(){
+    if(S.running) stop(); else start();
+  }
+
+  function doStep(){
+    stop();
+    step();
+    render();
+    save();
+  }
+
+  function reset(keepActions){
+    stop();
+    var last = S.lastAction;
+    S.clock = 0; S.tick = 0; S.jobs = {}; S.order = [];
+    S.wait = []; S.prio = []; S.delayed = []; S.active = []; S.done = []; S.failed = [];
+    S.events = []; S.prioCounter = 0; S.delayedCounter = 0; S.jobCounter = 0; S.bucket = {};
+    S.lastAction = keepActions ? last : null;
+    S.replayCount = 0;
+    render();
+    save();
+  }
+
+  function replay(){
+    var act = S.lastAction;
+    if(!act){ logEvent("err", "no hay acción que repetir"); render(); return; }
+    reset(true);
+    logEvent("add", "⟲ REPETIR: " + act.name + " (delay=" + act.delay + "ms, prio=" + act.priority + ")");
+    addJob(act.name, act.delay, act.priority, act.work, act.willFail, act.blockLoop);
+    render();
+    save();
+    start();
+  }
+
+  // ---------- Wiring ----------
+  $("btnRun").addEventListener("click", toggle);
+  $("btnStep").addEventListener("click", doStep);
+  $("btnReset").addEventListener("click", function(){ reset(false); });
+  $("btnReplay").addEventListener("click", replay);
+  $("btnAdd").addEventListener("click", function(){
+    var name = $("jobName").value || "job";
+    var delay = numOr($("jobDelay").value, 0);
+    var priority = numOr($("jobPrio").value, 0);
+    var work = numOr($("jobWork").value, 1200);
+    var willFail = $("jobFail").checked;
+    var blockLoop = $("jobBlock").checked;
+    S.lastAction = { name: name, delay: delay, priority: priority, work: work, willFail: willFail, blockLoop: blockLoop };
+    addJob(name, delay, priority, work, willFail, blockLoop);
+    render();
+    save();
+  });
+  $("pSpeed").addEventListener("change", function(){
+    S.speed = numOr(this.value, 4);
+    if(S.running){ stop(); start(); }
+  });
+  ["pConc","pLock","pStall","pAtt"].forEach(function(id){
+    $(id).addEventListener("change", function(){ render(); save(); });
+  });
+
+  // ---------- Init ----------
+  if(!load()){
+    // estado inicial de demostración
+    addJob("email-bienvenida", 0, 0, 1400);
+    addJob("reporte-diario", 0, 0, 900);
+    addJob("otp-alta", 0, 1, 700);          // priority 1 -> ZSET priorizado
+    addJob("webhook-limpieza", 4000, 0, 1200); // delayed
+    logEvent("add", "— estado inicial cargado —");
+  }  render();
+  save();
+
+  // Exponer para pruebas manuales en la consola
+  window.__bullmqSim = { state: S, step: step, reset: reset, add: addJob };
+})();
+</script>
+</body>
+</html>
