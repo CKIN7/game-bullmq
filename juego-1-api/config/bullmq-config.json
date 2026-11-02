@@ -1,0 +1,24 @@
+{
+  "source": {
+    "repo": "api-movies",
+    "file": "juego-1-api/README.md",
+    "section": "Async jobs (BullMQ)",
+    "gameDoc": "2026-11-02-juegos-aprendizaje-bullmq-repo-api-movies.md"
+  },
+  "priorityRule": {
+    "list": "priority 0 -> wait (LIST)",
+    "zset": "priority > 0 -> prioritized (ZSET)",
+    "score": "priority * 2^32 + counter",
+    "order": "menor score primero; menor numero = mas prioridad",
+    "waitDrainsFirst": true
+  },
+  "queues": [
+    { "name": "email-critical", "priority": 1, "worker": "emailWorker" },
+    { "name": "email-transactional", "priority": 5, "worker": "emailWorker" },
+    { "name": "email-marketing", "priority": 10, "worker": "emailWorker" },
+    { "name": "notification-fanout", "priority": 1, "worker": "notificationWorker" },
+    { "name": "notification-inapp", "priority": 3, "worker": "notificationWorker" },
+    { "name": "recs-recompute-user", "priority": 1, "worker": "recommendationWorker" },
+    { "name": "recs-recompute-all", "priority": 10, "worker": "recommendationWorker" }
+  ]
+}
