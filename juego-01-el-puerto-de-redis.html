@@ -357,6 +357,7 @@
   .glossary-head h2{font-family:var(--serif);font-weight:400;margin:6px 0 0;font-size:26px}
   .glossary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .glossary-term{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fdfcfa}
+  .glossary-term.is-focus{outline:2px solid var(--accent);outline-offset:2px;background:#fff6ee}
   .glossary-term b{font-size:12.5px}
   .glossary-term p{margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink2)}
   .glossary-links{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px 12px;font-size:12px;color:var(--muted)}
@@ -365,6 +366,51 @@
 
   .evtlog div.is-new{background:var(--primary-soft);border-radius:4px}
   .evtlog div.is-new .tx{font-weight:600}
+
+  /* Mapa de componentes */
+  .arch{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;
+    box-shadow:var(--sh2);margin-bottom:18px;overflow:hidden;
+  }
+  .arch-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:11px 16px;border-bottom:1px solid var(--line);background:#fdfcfa;
+  }
+  .arch-title{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;color:var(--ink2)}
+  .arch-title b{font-weight:500;color:var(--ink)}
+  .arch-now{font-family:var(--mono);font-size:10.5px;color:var(--accent);font-weight:600}
+  .arch-scroll{overflow-x:auto;padding:10px 14px 4px}
+  #archMap{display:block;width:100%;min-width:820px;height:auto}
+  .arch-note{padding:0 16px 11px;font-size:11px;color:var(--muted)}
+  .arch-note code{font-size:10px}
+
+  .arch-node rect{fill:#fffdf8;stroke:#dcd6c8;stroke-width:1.2;transition:fill .2s,stroke .2s}
+  .arch-node .t{font-family:var(--mono);font-size:10.5px;font-weight:600;fill:var(--ink)}
+  .arch-node .s{font-family:var(--mono);font-size:8px;fill:var(--muted)}
+  .arch-node .k{font-family:var(--mono);font-size:8px;fill:var(--primary)}
+  .arch-node.is-hot rect{fill:#fff4ea;stroke:var(--accent);stroke-width:2.2}
+  .arch-node.is-hot .t{fill:#a45f2c}
+  .arch-node[data-term]{cursor:pointer}
+  .arch-node[data-term]:hover rect{fill:#fdf4e8;stroke:var(--accent)}
+
+  .arch-edge path{fill:none;stroke:#c7c1b3;stroke-width:1.5;transition:stroke .2s}
+  .arch-edge .arch-label{font-family:var(--mono);font-size:8px;fill:#8a8578}
+  .arch-edge.dashed path{stroke-dasharray:4 4}
+  .arch-edge.is-hot path{
+    stroke:var(--accent);stroke-width:2.4;marker-end:url(#archArrowHot);
+    stroke-dasharray:6 5;animation:archDash .55s linear infinite;
+  }
+  .arch-edge.is-hot .arch-label{fill:var(--accent);font-weight:600}
+  @keyframes archDash{to{stroke-dashoffset:-11}}
+
+  .rule-row{transition:background .2s}
+  .rule-row.is-hot{background:var(--accent-soft);border-radius:4px;box-shadow:-6px 0 0 var(--accent-soft),6px 0 0 var(--accent-soft)}
+
+  @media (max-width:700px){
+    .arch-head{padding:10px 12px}
+    .arch-scroll{padding:8px 10px 2px}
+    #archMap{min-width:760px}
+  }
 
   @media (max-width:700px){
     .glossary-grid{grid-template-columns:1fr}
@@ -406,6 +452,142 @@
       <div class="stat"><div class="v" id="hudClock">0.0s</div><div class="l">reloj virtual</div></div>
     </div>
   </header>
+
+  <section class="arch" aria-labelledby="archTitle">
+    <div class="arch-head">
+      <div class="arch-title">
+        <span class="pulse"></span>
+        <span id="archTitle"><b>Mapa de componentes</b> — cómo viaja un job por BullMQ</span>
+      </div>
+      <span class="arch-now" id="archNow">Sin actividad todavía.</span>
+    </div>
+    <div class="arch-scroll">
+      <svg id="archMap" viewBox="0 0 1000 210" role="img" aria-label="Diagrama de componentes de BullMQ: productor, router, wait, prioritized, delayed, moveToActive, worker, completed, failed y stream de eventos">
+        <defs>
+          <marker id="archArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#c7c1b3"/>
+          </marker>
+          <marker id="archArrowHot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#c97b3f"/>
+          </marker>
+        </defs>
+
+        <!-- nodos -->
+        <g class="arch-node" id="arch-producer">
+          <rect x="8" y="78" width="120" height="54" rx="10"/>
+          <text class="t" x="68" y="99" text-anchor="middle">PRODUCTOR</text>
+          <text class="s" x="68" y="113" text-anchor="middle">queue.add()</text>
+          <text class="k" x="68" y="125" text-anchor="middle">crea el job</text>
+        </g>
+
+        <g class="arch-node" id="arch-router">
+          <rect x="156" y="78" width="134" height="54" rx="10"/>
+          <text class="t" x="223" y="99" text-anchor="middle">ROUTER</text>
+          <text class="s" x="223" y="113" text-anchor="middle">zoneFor(job)</text>
+          <text class="k" x="223" y="125" text-anchor="middle">delay? priority?</text>
+        </g>
+
+        <g class="arch-node" id="arch-wait" data-term="wait">
+          <rect x="330" y="8" width="150" height="48" rx="10"/>
+          <text class="t" x="405" y="27" text-anchor="middle">wait · LIST</text>
+          <text class="s" x="405" y="42" text-anchor="middle">LPUSH → RPOPLPUSH</text>
+        </g>
+
+        <g class="arch-node" id="arch-prioritized" data-term="prio">
+          <rect x="330" y="81" width="150" height="48" rx="10"/>
+          <text class="t" x="405" y="100" text-anchor="middle">prioritized · ZSET</text>
+          <text class="s" x="405" y="115" text-anchor="middle">ZADD → ZPOPMIN</text>
+        </g>
+
+        <g class="arch-node" id="arch-delayed" data-term="delayed">
+          <rect x="330" y="154" width="150" height="48" rx="10"/>
+          <text class="t" x="405" y="173" text-anchor="middle">delayed · ZSET</text>
+          <text class="s" x="405" y="188" text-anchor="middle">ZADD ×4096</text>
+        </g>
+
+        <g class="arch-node" id="arch-move" data-term="fifo">
+          <rect x="520" y="76" width="150" height="58" rx="10"/>
+          <text class="t" x="595" y="97" text-anchor="middle">moveToActive-11.lua</text>
+          <text class="s" x="595" y="111" text-anchor="middle">RPOPLPUSH / ZPOPMIN</text>
+          <text class="k" x="595" y="123" text-anchor="middle">activa el job</text>
+        </g>
+
+        <g class="arch-node" id="arch-worker" data-term="lock">
+          <rect x="712" y="76" width="112" height="58" rx="10"/>
+          <text class="t" x="768" y="97" text-anchor="middle">WORKER</text>
+          <text class="s" x="768" y="111" text-anchor="middle">active + lock</text>
+          <text class="k" x="768" y="123" text-anchor="middle">concurrency 2</text>
+        </g>
+
+        <g class="arch-node" id="arch-completed" data-term="events">
+          <rect x="862" y="8" width="130" height="42" rx="10"/>
+          <text class="t" x="927" y="24" text-anchor="middle">completed</text>
+          <text class="s" x="927" y="38" text-anchor="middle">XADD events</text>
+        </g>
+
+        <g class="arch-node" id="arch-failed" data-term="events">
+          <rect x="862" y="82" width="130" height="42" rx="10"/>
+          <text class="t" x="927" y="98" text-anchor="middle">failed</text>
+          <text class="s" x="927" y="112" text-anchor="middle">XADD events</text>
+        </g>
+
+        <g class="arch-node" id="arch-events" data-term="events">
+          <rect x="862" y="154" width="130" height="42" rx="10"/>
+          <text class="t" x="927" y="170" text-anchor="middle">events stream</text>
+          <text class="s" x="927" y="184" text-anchor="middle">bull:puerto:events</text>
+        </g>
+
+        <!-- aristas del router -->
+        <g class="arch-edge" id="arch-e-producer-router">
+          <path d="M128,105 H156" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="142" y="99" text-anchor="middle">addJob</text>
+        </g>
+        <g class="arch-edge" id="arch-e-router-wait">
+          <path d="M290,105 H311 V32 H330" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="306" y="48" text-anchor="end">LPUSH</text>
+        </g>
+        <g class="arch-edge" id="arch-e-router-prio">
+          <path d="M290,105 H330" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="310" y="99" text-anchor="middle">ZADD</text>
+        </g>
+        <g class="arch-edge" id="arch-e-router-delayed">
+          <path d="M290,105 H311 V178 H330" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="306" y="171" text-anchor="end">ZADD</text>
+        </g>
+
+        <!-- aristas hacia moveToActive -->
+        <g class="arch-edge" id="arch-e-wait-move">
+          <path d="M480,32 H502 V92 H520" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="496" y="62" text-anchor="end">RPOPLPUSH</text>
+        </g>
+        <g class="arch-edge" id="arch-e-prio-move">
+          <path d="M480,105 H520" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="500" y="99" text-anchor="middle">ZPOPMIN</text>
+        </g>
+        <g class="arch-edge dashed" id="arch-e-delayed-move">
+          <path d="M480,178 H502 V118 H520" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="496" y="148" text-anchor="end">promote</text>
+        </g>
+
+        <!-- aristas del worker -->
+        <g class="arch-edge" id="arch-e-move-worker">
+          <path d="M670,105 H712" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="691" y="99" text-anchor="middle">lock</text>
+        </g>
+        <g class="arch-edge" id="arch-e-worker-completed">
+          <path d="M824,92 H844 V29 H862" marker-end="url(#archArrow)"/>
+        </g>
+        <g class="arch-edge" id="arch-e-worker-failed">
+          <path d="M824,105 H862" marker-end="url(#archArrow)"/>
+        </g>
+        <g class="arch-edge dashed" id="arch-e-worker-events">
+          <path d="M824,118 H844 V175 H862" marker-end="url(#archArrow)"/>
+          <text class="arch-label" x="838" y="150" text-anchor="end">XADD</text>
+        </g>
+      </svg>
+    </div>
+    <p class="arch-note">El nodo y la arista del <b>último comando</b> se iluminan en vivo. <code>delayed</code> no compite hasta que <code>promoteDelayedJobs</code> lo mueve; <code>wait</code> se drena entera antes de consultar <code>prioritized</code>.</p>
+  </section>
 
   <main class="layout">
     <section class="board">
@@ -449,9 +631,9 @@
           <h3>Regla de entrada</h3>
           <span class="badge">addStandardJob</span>
         </div>
-        <div class="rule-row"><span class="dot delay"></span><span><code>delay &gt; 0</code></span><span class="arrow">→ delayed</span></div>
-        <div class="rule-row"><span class="dot prio"></span><span><code>priority &gt; 0</code></span><span class="arrow">→ prioritized</span></div>
-        <div class="rule-row"><span class="dot wait"></span><span>resto</span><span class="arrow">→ wait</span></div>
+        <div class="rule-row" id="rule-delay"><span class="dot delay"></span><span><code>delay &gt; 0</code></span><span class="arrow">→ delayed</span></div>
+        <div class="rule-row" id="rule-prio"><span class="dot prio"></span><span><code>priority &gt; 0</code></span><span class="arrow">→ prioritized</span></div>
+        <div class="rule-row" id="rule-wait"><span class="dot wait"></span><span>resto</span><span class="arrow">→ wait</span></div>
         <p class="note" style="margin-top:7px;margin-bottom:0"><b>priority: 0</b> significa <em>sin prioridad</em>, no máxima. La LIST <code>wait</code> se drena entera antes del ZSET.</p>
       </section>
 
@@ -506,12 +688,12 @@
       <button id="btnGlossaryClose" class="sm" aria-label="Cerrar glosario">Cerrar ✕</button>
     </div>
     <div class="glossary-grid">
-      <div class="glossary-term"><b>LIST <code>wait</code></b><p>Cola FIFO de jobs sin prioridad ni delay. <code>addStandardJob</code> hace <code>LPUSH</code>; el worker saca por el otro extremo con <code>RPOPLPUSH</code>.</p></div>
-      <div class="glossary-term"><b>ZSET <code>prioritized</code></b><p>Jobs con <code>priority &gt; 0</code>. El score es <code>priority × 2³² + contador</code>; el menor score sale primero con <code>ZPOPMIN</code>.</p></div>
-      <div class="glossary-term"><b>ZSET <code>delayed</code></b><p>Jobs con <code>delay &gt; 0</code>. El score es <code>timestamp × 4096 + offset</code>. No compiten hasta que <code>promoteDelayedJobs</code> los mueve.</p></div>
-      <div class="glossary-term"><b>FIFO antes que prioridad</b><p><code>moveToActive-11.lua</code> drena toda la LIST <code>wait</code> antes de consultar <code>prioritized</code>. Un job con prioridad no adelanta a los que ya están en <code>wait</code>.</p></div>
-      <div class="glossary-term"><b>Lock y stalled</b><p>El worker toma el job con un lock temporal. Si el processor se bloquea y el lock expira, <code>moveStalledJobsToWait-9.lua</code> lo devuelve a <code>wait</code> o lo marca <code>failed</code>.</p></div>
-      <div class="glossary-term"><b>Stream de eventos</b><p><code>XADD bull:puerto:events</code> registra <code>completed</code>, <code>failed</code>, <code>stalled</code> y otros hitos. Es la fuente de la traza que ves a la derecha.</p></div>
+      <div class="glossary-term" id="glossary-wait"><b>LIST <code>wait</code></b><p>Cola FIFO de jobs sin prioridad ni delay. <code>addStandardJob</code> hace <code>LPUSH</code>; el worker saca por el otro extremo con <code>RPOPLPUSH</code>.</p></div>
+      <div class="glossary-term" id="glossary-prio"><b>ZSET <code>prioritized</code></b><p>Jobs con <code>priority &gt; 0</code>. El score es <code>priority × 2³² + contador</code>; el menor score sale primero con <code>ZPOPMIN</code>.</p></div>
+      <div class="glossary-term" id="glossary-delayed"><b>ZSET <code>delayed</code></b><p>Jobs con <code>delay &gt; 0</code>. El score es <code>timestamp × 4096 + offset</code>. No compiten hasta que <code>promoteDelayedJobs</code> los mueve.</p></div>
+      <div class="glossary-term" id="glossary-fifo"><b>FIFO antes que prioridad</b><p><code>moveToActive-11.lua</code> drena toda la LIST <code>wait</code> antes de consultar <code>prioritized</code>. Un job con prioridad no adelanta a los que ya están en <code>wait</code>.</p></div>
+      <div class="glossary-term" id="glossary-lock"><b>Lock y stalled</b><p>El worker toma el job con un lock temporal. Si el processor se bloquea y el lock expira, <code>moveStalledJobsToWait-9.lua</code> lo devuelve a <code>wait</code> o lo marca <code>failed</code>.</p></div>
+      <div class="glossary-term" id="glossary-events"><b>Stream de eventos</b><p><code>XADD bull:puerto:events</code> registra <code>completed</code>, <code>failed</code>, <code>stalled</code> y otros hitos. Es la fuente de la traza que ves a la derecha.</p></div>
     </div>
     <div class="glossary-links">
       <b>Fuentes:</b>
@@ -599,6 +781,9 @@
     quiz: { answers: [], correct: [] },
     hover: null,              // uid bajo el cursor
     lastStepInfo: null,       // último evento destacado en la traza
+    flow: null,               // { kind, from, to, label, t0 } animación canvas
+    fxEventCount: 0,          // eventos ya animados
+    lastFocusEvent: null,     // evento didáctico del último tick (move/promote/complete)
     mistakes: [],
     result: null,
     actualOrder: [],
@@ -1662,7 +1847,94 @@
     drawDock(now);
     for (var i = 0; i < ZONES.length; i++) drawLane(ZONES[i], now);
     drawStatus(now);
+    drawFlow(now);
     drawGhost(now);
+  }
+
+  function flowAnchor(name) {
+    if (name === "dock") return { x: DOCK.x + DOCK.w - 4, y: DOCK.y + 250 };
+    if (name === "active" || name === "moveToActive") return { x: PROC.x + PROC.w / 2, y: PROC.y + 30 };
+    if (name === "worker") return { x: PROC.x + PROC.w * 0.74, y: PROC.y + 52 };
+    if (name === "completed") return { x: DONE.x + 52, y: DONE.y + 46 };
+    if (name === "failed") return { x: DONE.x + 52, y: DONE.y + 96 };
+    var r = LANE_RECT[name];
+    if (!r) return null;
+    return { x: r.x + r.w - 44, y: r.y + r.h - 8 };
+  }
+
+  function captureEngineFlow() {
+    if (!G.engine) return;
+    var events = G.engine.events;
+    var prev = G.fxEventCount || 0;
+    if (events.length <= prev) return;
+    G.fxEventCount = events.length;
+
+    // Un mismo step puede emitir move + active. Elegimos el evento más
+    // explicativo para la animación del canvas.
+    var rank = { promote: 5, move: 4, complete: 3, fail: 3, stall: 3, add: 2, active: 1 };
+    var chosen = null;
+    var chosenEvent = null;
+    var chosenRank = -1;
+    for (var i = prev; i < events.length; i++) {
+      var e = events[i];
+      var f = flowForEvent(e);
+      if (!f) continue;
+      var r = rank[e.kind] != null ? rank[e.kind] : 0;
+      if (r >= chosenRank) {
+        chosenRank = r;
+        f.kind = e.kind;
+        f.t0 = nowMs();
+        chosen = f;
+        chosenEvent = e;
+      }
+    }
+    if (!chosen) return;
+    G.flow = chosen;
+    G.lastFocusEvent = chosenEvent;
+    if (G.laneFx && ZONES.indexOf(chosen.from) >= 0) G.laneFx[chosen.from] = { kind: "ok", t0: chosen.t0 };
+    if (G.laneFx && ZONES.indexOf(chosen.to) >= 0) G.laneFx[chosen.to] = { kind: "ok", t0: chosen.t0 };
+  }
+
+  function drawFlow(now) {
+    if (!G.flow) return;
+    var dur = 850;
+    var age = now - G.flow.t0;
+    if (age < 0 || age > dur) { G.flow = null; return; }
+    var a = flowAnchor(G.flow.from);
+    var b = flowAnchor(G.flow.to);
+    if (!a || !b) { G.flow = null; return; }
+    var c = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 48 };
+    var color = (G.flow.to && ZONE_COLOR[G.flow.to]) || "#c97b3f";
+    var fade = Math.min(1, (1 - age / dur) * 1.7);
+
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 6]);
+    ctx.lineDashOffset = -age * 0.05;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.quadraticCurveTo(c.x, c.y, b.x, b.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    var t = Math.min(1, age / (dur * 0.72));
+    var mt = 1 - t;
+    var px = mt * mt * a.x + 2 * mt * t * c.x + t * t * b.x;
+    var py = mt * mt * a.y + 2 * mt * t * c.y + t * t * b.y;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.85)";
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    ctx.font = "600 9px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#14171e";
+    ctx.fillText(G.flow.label, px + 9, py - 7);
+    ctx.restore();
   }
 
   /* ================================================================== */
@@ -1885,9 +2157,10 @@
 
   function renderTrace() {
     if (!G.engine) return;
+    renderArchMap();
     var badge = $("traceTick");
     badge.textContent = "tick " + G.engine.tick + " · " + fmt(G.engine.clock);
-    var info = traceInfo(latestEvent());
+    var info = traceInfo(G.lastFocusEvent || latestEvent());
     if (!info) {
       $("traceCmd").innerHTML = '<span class="muted">Sin comandos todavía. Coloca un contenedor.</span>';
       $("traceCode").textContent = "";
@@ -1897,6 +2170,110 @@
     $("traceCmd").innerHTML = '<span class="cmd">' + esc(info.head) + "</span>";
     $("traceCode").innerHTML = highlightLua(info.code);
     $("traceWhy").textContent = info.why;
+  }
+
+  var archCache = null;
+  function archEls() {
+    if (!archCache) {
+      archCache = Array.prototype.slice.call(
+        document.querySelectorAll("#archMap .arch-node, #archMap .arch-edge")
+      );
+    }
+    return archCache;
+  }
+
+  function flowForEvent(e) {
+    if (!e) return null;
+    var cmd = e.cmd || "";
+    if (e.kind === "add") {
+      if (cmd.indexOf("LPUSH") === 0) return { from: "dock", to: "wait", label: "LPUSH" };
+      if (cmd.indexOf("prioritized") >= 0) return { from: "dock", to: "prioritized", label: "ZADD" };
+      return { from: "dock", to: "delayed", label: "ZADD" };
+    }
+    if (e.kind === "move") {
+      if (cmd.indexOf("RPOPLPUSH") === 0) return { from: "wait", to: "active", label: "RPOPLPUSH" };
+      return { from: "prioritized", to: "active", label: "ZPOPMIN" };
+    }
+    if (e.kind === "promote") {
+      var dest = (e.text || "").indexOf("prioritized") >= 0 ? "prioritized" : "wait";
+      return { from: "delayed", to: dest, label: "promote" };
+    }
+    if (e.kind === "active") return { from: "active", to: "worker", label: "lock" };
+    if (e.kind === "complete") return { from: "worker", to: "completed", label: "completed" };
+    if (e.kind === "fail") return { from: "worker", to: "failed", label: "failed" };
+    if (e.kind === "stall") return { from: "worker", to: "wait", label: "stalled" };
+    return null;
+  }
+
+  function renderArchMap() {
+    if (!$("archMap")) return;
+    var e = G.lastFocusEvent || latestEvent();
+    var cmd = e ? (e.cmd || "") : "";
+    var hot = [];
+    var text = "Sin actividad todavía. Coloca un contenedor para ver el primer comando.";
+    var zone = null;
+
+    if (e) {
+      if (e.kind === "add") {
+        if (cmd.indexOf("LPUSH") === 0) {
+          hot = ["arch-wait", "arch-e-router-wait"];
+          text = "addStandardJob → LPUSH en wait";
+          zone = "wait";
+        } else if (cmd.indexOf("prioritized") >= 0) {
+          hot = ["arch-prioritized", "arch-e-router-prio"];
+          text = "addPrioritizedJob → ZADD en prioritized";
+          zone = "prioritized";
+        } else {
+          hot = ["arch-delayed", "arch-e-router-delayed"];
+          text = "addDelayedJob → ZADD en delayed";
+          zone = "delayed";
+        }
+      } else if (e.kind === "move") {
+        if (cmd.indexOf("RPOPLPUSH") === 0) {
+          hot = ["arch-wait", "arch-move", "arch-e-wait-move"];
+          text = "RPOPLPUSH · wait se drena antes de mirar prioritized";
+          zone = "wait";
+        } else {
+          hot = ["arch-prioritized", "arch-move", "arch-e-prio-move"];
+          text = "ZPOPMIN · sale el menor score de prioritized";
+          zone = "prioritized";
+        }
+      } else if (e.kind === "promote") {
+        var dest = (e.text || "").indexOf("prioritized") >= 0 ? "prioritized" : "wait";
+        hot = ["arch-delayed", "arch-move", "arch-e-delayed-move"];
+        text = "promoteDelayedJobs · delayed → " + dest;
+        zone = "delayed";
+      } else if (e.kind === "active") {
+        hot = ["arch-worker", "arch-e-move-worker"];
+        text = "SET lock · el worker toma el job";
+      } else if (e.kind === "complete") {
+        hot = ["arch-worker", "arch-completed", "arch-e-worker-completed"];
+        text = "completed · XADD al stream de eventos";
+      } else if (e.kind === "fail") {
+        hot = ["arch-worker", "arch-failed", "arch-e-worker-failed"];
+        text = "failed · el job agotó sus intentos";
+      } else if (e.kind === "stall") {
+        hot = ["arch-worker", "arch-wait"];
+        text = "stalled · el job vuelve a wait";
+      } else if (e.kind === "lock") {
+        hot = ["arch-worker"];
+        text = "lock renovado · el worker sigue vivo";
+      }
+    }
+
+    var els = archEls();
+    for (var i = 0; i < els.length; i++) els[i].classList.remove("is-hot");
+    for (i = 0; i < hot.length; i++) {
+      var el = document.getElementById(hot[i]);
+      if (el) el.classList.add("is-hot");
+    }
+    $("archNow").textContent = text;
+
+    var rules = { wait: $("rule-wait"), prioritized: $("rule-prio"), delayed: $("rule-delay") };
+    Object.keys(rules).forEach(function (k) {
+      if (rules[k]) rules[k].classList.remove("is-hot");
+    });
+    if (zone && rules[zone]) rules[zone].classList.add("is-hot");
   }
 
   function renderAll() {
@@ -1991,7 +2368,7 @@
     return null;
   }
 
-  var ZONE_LABEL = {
+  var HOVER_ZONE_LABEL = {
     dock: "muelle (sin clasificar)",
     wait: "wait · LIST",
     prioritized: "prioritized · ZSET",
@@ -2011,7 +2388,7 @@
     html += '<div class="row"><span>delay</span><span>' + fmt(spec.delay || 0) + "</span></div>";
     if (score != null) html += '<div class="row"><span>score</span><span>' + score + "</span></div>";
     html += '<div class="row"><span>estado</span><span>' + esc(state) + "</span></div>";
-    html += '<div class="tipzone">Zona: ' + esc(ZONE_LABEL[hit.zone] || hit.zone) +
+    html += '<div class="tipzone">Zona: ' + esc(HOVER_ZONE_LABEL[hit.zone] || hit.zone) +
       " · esperada: " + esc(expected) + "</div>";
     html += '<div class="tipzone">' + esc(zoneReason(spec)) + "</div>";
     return html;
@@ -2312,6 +2689,9 @@
     G.quiz = { answers: [], correct: [] };
     G.hover = null;
     G.paused = false;
+    G.flow = null;
+    G.fxEventCount = 0;
+    G.lastFocusEvent = null;
     G.engine = newEngine();
     G.screen = "placing";
     lastEventCount = -1;
@@ -2336,6 +2716,9 @@
     G.paused = G.speed === 0;
     G.lastFrame = nowMs();
     G.selected = null;
+    G.fxEventCount = G.engine.events.length;
+    G.flow = null;
+    G.lastFocusEvent = null;
     updateStepUI();
     updateHud();
     renderAll();
@@ -2345,6 +2728,7 @@
   function stepOnce() {
     if (G.screen !== "running") return;
     G.engine.step();
+    captureEngineFlow();
     if (G.engine.isIdle()) {
       finishWave();
       updateStepUI();
@@ -2731,8 +3115,24 @@
   $("btnStep").addEventListener("click", stepOnce);
   $("btnAuto").addEventListener("click", resumeAuto);
 
-  $("btnGlossary").addEventListener("click", function () {
+  function openGlossaryTerm(term) {
     $("glossary").classList.remove("hidden");
+    var terms = document.querySelectorAll(".glossary-term");
+    for (var i = 0; i < terms.length; i++) terms[i].classList.remove("is-focus");
+    if (!term) return;
+    var el = document.getElementById("glossary-" + term);
+    if (!el) return;
+    el.classList.add("is-focus");
+    if (el.scrollIntoView) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  $("btnGlossary").addEventListener("click", function () {
+    openGlossaryTerm(null);
+  });
+  $("archMap").addEventListener("click", function (ev) {
+    var node = ev.target.closest("[data-term]");
+    if (!node) return;
+    openGlossaryTerm(node.getAttribute("data-term"));
   });
   $("btnGlossaryClose").addEventListener("click", function () {
     $("glossary").classList.add("hidden");
@@ -2775,6 +3175,7 @@
           break;
         }
       }
+      captureEngineFlow();
       updateHud();
       renderScores();
       renderEvents();
