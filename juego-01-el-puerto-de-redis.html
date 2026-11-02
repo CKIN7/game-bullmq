@@ -291,6 +291,86 @@
   .toast.ok{background:var(--primary)}
   .toast.bad{background:#a4535a}
   .toast.info{background:var(--ink2)}
+
+  .hidden{display:none !important}
+  .muted{color:var(--muted)}
+
+  .trace-cmd{
+    font-family:var(--mono);font-size:10.5px;line-height:1.5;
+    background:#14171e;color:#dfe7e2;border-radius:9px;
+    padding:8px 10px;margin-bottom:8px;word-break:break-word;
+  }
+  .trace-cmd .cmd{color:#f0b27a;font-weight:600}
+  .trace-cmd .key{color:#8fd3c1}
+  .trace-code{
+    font-family:var(--mono);font-size:10px;line-height:1.55;
+    background:#f5f3ee;border:1px solid var(--line);border-radius:9px;
+    padding:8px 10px;margin:0 0 8px;white-space:pre-wrap;word-break:break-word;
+    color:#3a4256;
+  }
+  .trace-code .kw{color:var(--accent);font-weight:600}
+  .trace-code .cm{color:#8a8578}
+  .trace-why{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink2)}
+
+  .job-tip{
+    position:absolute;z-index:20;pointer-events:none;
+    min-width:180px;max-width:280px;
+    background:rgba(20,23,30,.96);color:#f4f2ec;
+    border-radius:10px;padding:9px 11px;font-size:11.5px;line-height:1.45;
+    box-shadow:0 12px 30px rgba(0,0,0,.28);
+  }
+  .job-tip b{font-size:12.5px;display:block;margin-bottom:2px}
+  .job-tip .mono{font-family:var(--mono);font-size:10px;color:#a9c7bd}
+  .job-tip .row{display:flex;justify-content:space-between;gap:10px}
+  .job-tip .row span:last-child{font-family:var(--mono);font-size:10px}
+  .job-tip .tipzone{margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.14);color:#e7c9a6}
+
+  .quiz{margin-top:16px;border-top:1px dashed var(--line);padding-top:13px}
+  .quiz-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+  .quiz-head b{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--primary)}
+  .quiz-q{margin-bottom:11px}
+  .quiz-q:last-child{margin-bottom:0}
+  .qq{margin:0 0 7px;font-size:13px;font-weight:600;color:var(--ink)}
+  .quiz-opts{display:flex;flex-direction:column;gap:5px}
+  .quiz-opt{
+    width:100%;text-align:left;font-size:12px;padding:7px 10px;
+    border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;
+  }
+  .quiz-opt:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+  .quiz-opt.ok{border-color:rgba(47,111,94,.5);background:var(--primary-soft);color:var(--primary);font-weight:600}
+  .quiz-opt.bad{border-color:rgba(176,99,103,.5);background:var(--danger-soft);color:var(--danger);font-weight:600}
+  .quiz-opt.dim{opacity:.5}
+  .quiz-opt:disabled{cursor:default}
+  .quiz-why{margin:7px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink2)}
+  .quiz-why.ok{color:var(--primary)}
+  .quiz-why.bad{color:var(--danger)}
+
+  .glossary{
+    position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:rgba(20,23,30,.5);backdrop-filter:blur(3px);
+  }
+  .glossary-card{
+    background:var(--card);border-radius:18px;box-shadow:var(--sh2);
+    max-width:760px;width:100%;max-height:86vh;overflow:auto;padding:22px 24px;
+  }
+  .glossary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+  .glossary-head h2{font-family:var(--serif);font-weight:400;margin:6px 0 0;font-size:26px}
+  .glossary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .glossary-term{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fdfcfa}
+  .glossary-term b{font-size:12.5px}
+  .glossary-term p{margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink2)}
+  .glossary-links{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px 12px;font-size:12px;color:var(--muted)}
+  .glossary-links a{color:var(--primary);text-decoration:none;font-family:var(--mono);font-size:11px}
+  .glossary-links a:hover{text-decoration:underline}
+
+  .evtlog div.is-new{background:var(--primary-soft);border-radius:4px}
+  .evtlog div.is-new .tx{font-weight:600}
+
+  @media (max-width:700px){
+    .glossary-grid{grid-template-columns:1fr}
+    .job-tip{max-width:220px}
+  }
+
   @media (max-width:1080px){
     .layout{grid-template-columns:1fr}
     .side{display:grid;grid-template-columns:repeat(2,1fr);align-items:start}
@@ -340,16 +420,21 @@
             <option value="2">2×</option>
             <option value="4" selected>4× · fluido</option>
             <option value="8">8× · rápido</option>
+            <option value="0">manual · paso a paso</option>
           </select>
+          <button id="btnGlossary" class="sm" title="Glosario de conceptos BullMQ">?</button>
           <button id="btnUndo" class="sm" title="Deshacer la última colocación correcta">↶ Deshacer</button>
           <button id="btnReplay" class="sm" title="Rebobinar esta oleada">⟲ Rebobinar</button>
+          <button id="btnStep" class="sm hidden" title="Avanza un tick virtual (100 ms)">Paso ›</button>
+          <button id="btnAuto" class="sm hidden" title="Volver a la simulación fluida">Auto ⏵</button>
           <button id="btnSail" class="primary">▶ Zarpar</button>
         </div>
       </div>
 
       <div class="canvas-wrap">
-        <canvas id="board" width="960" height="760" aria-label="Tablero del puerto de Redis"></canvas>
+        <canvas id="board" width="960" height="820" aria-label="Tablero del puerto de Redis"></canvas>
         <div class="overlay hidden" id="overlay"></div>
+        <div class="job-tip hidden" id="jobTip" role="tooltip"></div>
       </div>
 
       <div class="board-foot">
@@ -382,6 +467,16 @@
 
       <section class="panel">
         <div class="panel-head">
+          <h3>Traza Lua</h3>
+          <span class="badge" id="traceTick">tick 0</span>
+        </div>
+        <div class="trace-cmd" id="traceCmd"><span class="muted">Coloca un contenedor para ver el primer comando.</span></div>
+        <pre class="trace-code" id="traceCode"></pre>
+        <p class="trace-why" id="traceWhy">La traza se actualiza con cada tick. En manual, pulsa <b>Paso</b> para avanzar 100 ms virtuales.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
           <h3>Score inspector</h3>
           <span class="badge ok" id="scoreStatus">ZSET ordenado</span>
         </div>
@@ -401,8 +496,36 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<div class="glossary hidden" id="glossary" role="dialog" aria-modal="true" aria-labelledby="glossaryTitle">
+  <div class="glossary-card">
+    <div class="glossary-head">
+      <div>
+        <span class="eyebrow">Aula BullMQ</span>
+        <h2 id="glossaryTitle">Glosario del puerto</h2>
+      </div>
+      <button id="btnGlossaryClose" class="sm" aria-label="Cerrar glosario">Cerrar ✕</button>
+    </div>
+    <div class="glossary-grid">
+      <div class="glossary-term"><b>LIST <code>wait</code></b><p>Cola FIFO de jobs sin prioridad ni delay. <code>addStandardJob</code> hace <code>LPUSH</code>; el worker saca por el otro extremo con <code>RPOPLPUSH</code>.</p></div>
+      <div class="glossary-term"><b>ZSET <code>prioritized</code></b><p>Jobs con <code>priority &gt; 0</code>. El score es <code>priority × 2³² + contador</code>; el menor score sale primero con <code>ZPOPMIN</code>.</p></div>
+      <div class="glossary-term"><b>ZSET <code>delayed</code></b><p>Jobs con <code>delay &gt; 0</code>. El score es <code>timestamp × 4096 + offset</code>. No compiten hasta que <code>promoteDelayedJobs</code> los mueve.</p></div>
+      <div class="glossary-term"><b>FIFO antes que prioridad</b><p><code>moveToActive-11.lua</code> drena toda la LIST <code>wait</code> antes de consultar <code>prioritized</code>. Un job con prioridad no adelanta a los que ya están en <code>wait</code>.</p></div>
+      <div class="glossary-term"><b>Lock y stalled</b><p>El worker toma el job con un lock temporal. Si el processor se bloquea y el lock expira, <code>moveStalledJobsToWait-9.lua</code> lo devuelve a <code>wait</code> o lo marca <code>failed</code>.</p></div>
+      <div class="glossary-term"><b>Stream de eventos</b><p><code>XADD bull:puerto:events</code> registra <code>completed</code>, <code>failed</code>, <code>stalled</code> y otros hitos. Es la fuente de la traza que ves a la derecha.</p></div>
+    </div>
+    <div class="glossary-links">
+      <b>Fuentes:</b>
+      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/moveToActive-11.lua" target="_blank" rel="noopener">moveToActive-11.lua</a>
+      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/getPriorityScore.lua" target="_blank" rel="noopener">getPriorityScore.lua</a>
+      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/getDelayedScore.lua" target="_blank" rel="noopener">getDelayedScore.lua</a>
+      <a href="https://github.com/taskforcesh/bullmq/blob/master/src/commands/moveStalledJobsToWait-9.lua" target="_blank" rel="noopener">moveStalledJobsToWait-9.lua</a>
+    </div>
+  </div>
+</div>
+
 <script src="engine/bullmq-sim.js"></script>
 <script src="engine/waves-juego-01.js"></script>
+<script src="content/quiz-juego-01.js"></script>
 <script>
 (function () {
   "use strict";
@@ -468,10 +591,14 @@
     selected: null,
     engine: null,
     speed: 4,
+    paused: false,
     acc: 0,
     lastFrame: 0,
     checkpoint: { points: 0, lives: 3 },
-    waveStats: { placement: 0, penalty: 0, prediction: 0, bonus: 0 },
+    waveStats: { placement: 0, penalty: 0, prediction: 0, bonus: 0, fifo: 0, fifoOk: true, quiz: 0 },
+    quiz: { answers: [], correct: [] },
+    hover: null,              // uid bajo el cursor
+    lastStepInfo: null,       // último evento destacado en la traza
     mistakes: [],
     result: null,
     actualOrder: [],
@@ -1650,12 +1777,126 @@
       log.innerHTML = '<div><span class="t">—</span><span class="tx">sin eventos</span></div>';
       return;
     }
+    var last = events[events.length - 1];
     log.innerHTML = events.map(function (e) {
-      return '<div class="ev-' + esc(e.kind) + '" title="' + esc(e.cmd) + '">' +
+      return '<div class="ev-' + esc(e.kind) + (e === last ? " is-new" : "") + '" title="' + esc(e.cmd) + '">' +
         '<span class="t">' + fmt(e.t).padStart(5, " ") + "</span>" +
         '<span class="tx">' + esc(e.text) + "</span></div>";
     }).join("");
     log.scrollTop = log.scrollHeight;
+  }
+
+  function highlightLua(text) {
+    var s = esc(text);
+    s = s.replace(/--[^\n]*/g, '<span class="cm">$&</span>');
+    s = s.replace(/\b(RPOPLPUSH|ZPOPMIN|ZADD|LPUSH|PEXPIRE|SET|XADD|HSET|LREM|HINCRBY|ZRANGEBYSCORE)\b/g, '<span class="kw">$1</span>');
+    return s;
+  }
+
+  function latestEvent() {
+    if (!G.engine || !G.engine.events.length) return null;
+    var events = G.engine.events;
+    for (var i = events.length - 1; i >= 0; i--) {
+      if (events[i].kind !== "lock") return events[i];
+    }
+    return events[events.length - 1];
+  }
+
+  function traceInfo(e) {
+    if (!e) return null;
+    var cmd = e.cmd || "";
+    var id = e.jobId || "";
+    if (e.kind === "add") {
+      if (cmd.indexOf("LPUSH") === 0) {
+        return {
+          head: "LPUSH → wait",
+          code: "-- addStandardJob\nLPUSH bull:puerto:wait " + id,
+          why: "priority 0 y delay 0: el job entra en la LIST wait. La LIST se drenará en FIFO antes de mirar ningún ZSET."
+        };
+      }
+      if (cmd.indexOf("ZADD") === 0 && cmd.indexOf("prioritized") >= 0) {
+        return {
+          head: "ZADD → prioritized",
+          code: "-- addPrioritizedJob\nZADD bull:puerto:prioritized <score> " + id + "\n-- score = priority × 2³² + contador",
+          why: "priority > 0: el job nace en el ZSET prioritized. El contador global desempata por FIFO dentro de la misma prioridad."
+        };
+      }
+      return {
+        head: "ZADD → delayed",
+        code: "-- addDelayedJob\nZADD bull:puerto:delayed <score> " + id + "\n-- score = timestamp × 4096 + offset",
+        why: "delay > 0: el job nace en el ZSET delayed y no compite hasta que promoteDelayedJobs lo mueva."
+      };
+    }
+    if (e.kind === "move") {
+      if (cmd.indexOf("RPOPLPUSH") === 0) {
+        return {
+          head: "RPOPLPUSH → active",
+          code: "-- moveToActive-11.lua\nRPOPLPUSH bull:puerto:wait bull:puerto:active",
+          why: "wait NO está vacía: FIFO gana. El ZSET prioritized ni se consulta en este paso."
+        };
+      }
+      return {
+        head: "ZPOPMIN → active",
+        code: "-- moveToActive-11.lua\nZPOPMIN bull:puerto:prioritized",
+        why: "wait está vacía: recién ahora se consulta el ZSET y sale el job con el score más bajo."
+      };
+    }
+    if (e.kind === "active") {
+      return {
+        head: "SET lock",
+        code: "-- moveToActive-11.lua\nSET bull:puerto:" + id + ":lock PX 30000 NX",
+        why: "El worker toma el job y crea el lock. Mientras trabaja, el lock se renueva a la mitad de su duración."
+      };
+    }
+    if (e.kind === "promote") {
+      return {
+        head: "promoteDelayedJobs",
+        code: "-- promoteDelayedJobs\n-- el delay venció\nLPUSH bull:puerto:wait " + id + "  (o ZADD prioritized)",
+        why: "El timestamp del ZSET delayed ya venció. Si el job tiene priority > 0, al promover recibe un score NUEVO: el contador de delayed no se conserva."
+      };
+    }
+    if (e.kind === "complete") {
+      return {
+        head: "XADD completed",
+        code: "-- moveToFinished-11.lua\nXADD bull:puerto:events * event=completed jobId=" + id,
+        why: "El processor terminó. El job se marca completed y queda registrado en el stream de eventos."
+      };
+    }
+    if (e.kind === "fail") {
+      return {
+        head: "fallo y reintento",
+        code: "-- moveToFinished-11.lua\nZADD bull:puerto:delayed <backoff> " + id + "\n-- o XADD ... event=failed",
+        why: "El job falló. Con intentos restantes vuelve a delayed con backoff exponencial; si se agotan, queda failed."
+      };
+    }
+    if (e.kind === "stall") {
+      return {
+        head: "moveStalledJobsToWait",
+        code: "-- moveStalledJobsToWait-9.lua\nLPUSH bull:puerto:wait " + id,
+        why: "El lock expiró sin renovarse. El job no se pierde: vuelve a wait, salvo que supere maxStalledCount."
+      };
+    }
+    return {
+      head: e.kind,
+      code: cmd || "-- " + (e.text || ""),
+      why: e.text || ""
+    };
+  }
+
+  function renderTrace() {
+    if (!G.engine) return;
+    var badge = $("traceTick");
+    badge.textContent = "tick " + G.engine.tick + " · " + fmt(G.engine.clock);
+    var info = traceInfo(latestEvent());
+    if (!info) {
+      $("traceCmd").innerHTML = '<span class="muted">Sin comandos todavía. Coloca un contenedor.</span>';
+      $("traceCode").textContent = "";
+      $("traceWhy").textContent = "La traza se actualiza con cada tick. En manual, pulsa Paso para avanzar 100 ms virtuales.";
+      return;
+    }
+    $("traceCmd").innerHTML = '<span class="cmd">' + esc(info.head) + "</span>";
+    $("traceCode").innerHTML = highlightLua(info.code);
+    $("traceWhy").textContent = info.why;
   }
 
   function renderAll() {
@@ -1663,6 +1904,7 @@
     renderPrediction();
     renderScores();
     renderEvents(true);
+    renderTrace();
     draw();
   }
 
@@ -1718,6 +1960,83 @@
       }
     }
     return null;
+  }
+
+  function hitJob(x, y) {
+    var d = hitDock(x, y);
+    if (d) return { uid: d, zone: "dock" };
+    for (var i = 0; i < ZONES.length; i++) {
+      var list = G.layout.lanes[ZONES[i]];
+      for (var j = 0; j < list.length; j++) {
+        var s = list[j];
+        if (x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h) {
+          return { uid: s.uid, zone: ZONES[i] };
+        }
+      }
+    }
+    var act = G.layout.active;
+    for (i = 0; i < act.length; i++) {
+      var a = act[i];
+      if (x >= a.x && x <= a.x + a.w && y >= a.y && y <= a.y + a.h) {
+        return { uid: a.id, zone: "active" };
+      }
+    }
+    var done = G.layout.completed;
+    for (i = 0; i < done.length; i++) {
+      var c = done[i];
+      if (x >= c.x && x <= c.x + c.w && y >= c.y && y <= c.y + c.h) {
+        return { uid: c.id, zone: "completed" };
+      }
+    }
+    return null;
+  }
+
+  var ZONE_LABEL = {
+    dock: "muelle (sin clasificar)",
+    wait: "wait · LIST",
+    prioritized: "prioritized · ZSET",
+    delayed: "delayed · ZSET",
+    active: "active · worker",
+    completed: "completed"
+  };
+
+  function jobTipHtml(hit) {
+    var spec = specById(hit.uid) || {};
+    var job = engineJob(hit.uid);
+    var expected = BullMQSim.zoneFor(spec);
+    var score = job ? job.score : null;
+    var state = job ? job.state : (hit.zone === "dock" ? "pendiente" : hit.zone);
+    var html = '<b>#' + esc(hit.uid) + " · " + esc(spec.name || hit.uid) + "</b>";
+    html += '<div class="row"><span>priority</span><span>' + (spec.priority != null ? spec.priority : 0) + "</span></div>";
+    html += '<div class="row"><span>delay</span><span>' + fmt(spec.delay || 0) + "</span></div>";
+    if (score != null) html += '<div class="row"><span>score</span><span>' + score + "</span></div>";
+    html += '<div class="row"><span>estado</span><span>' + esc(state) + "</span></div>";
+    html += '<div class="tipzone">Zona: ' + esc(ZONE_LABEL[hit.zone] || hit.zone) +
+      " · esperada: " + esc(expected) + "</div>";
+    html += '<div class="tipzone">' + esc(zoneReason(spec)) + "</div>";
+    return html;
+  }
+
+  function showJobTip(ev, hit) {
+    var tip = $("jobTip");
+    tip.innerHTML = jobTipHtml(hit);
+    tip.classList.remove("hidden");
+    var wrap = canvas.parentElement;
+    var wr = wrap.getBoundingClientRect();
+    var x = ev.clientX - wr.left + 14;
+    var y = ev.clientY - wr.top + 14;
+    var tw = tip.offsetWidth || 200;
+    var th = tip.offsetHeight || 90;
+    if (x + tw > wr.width - 6) x = Math.max(6, ev.clientX - wr.left - tw - 14);
+    if (y + th > wr.height - 6) y = Math.max(6, ev.clientY - wr.top - th - 14);
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+  }
+
+  function hideJobTip() {
+    if (G.hover !== null) G.hover = null;
+    var tip = $("jobTip");
+    if (tip) tip.classList.add("hidden");
   }
 
   function zoneReason(spec, zone) {
@@ -1845,6 +2164,7 @@
     var p = pointerPos(ev);
 
     if (pointer) {
+      hideJobTip();
       var dx = p.x - pointer.x0;
       var dy = p.y - pointer.y0;
       if (!pointer.moved && Math.sqrt(dx * dx + dy * dy) > 6) pointer.moved = true;
@@ -1858,6 +2178,10 @@
       return;
     }
 
+    var hov = hitJob(p.x, p.y);
+    if (hov) showJobTip(ev, hov);
+    else hideJobTip();
+
     if (G.screen !== "placing") {
       canvas.style.cursor = "default";
       return;
@@ -1867,6 +2191,8 @@
     else if (hitLane(p.x, p.y)) canvas.style.cursor = G.selected ? "copy" : "default";
     else canvas.style.cursor = "default";
   });
+
+  canvas.addEventListener("pointerleave", hideJobTip);
 
   function endPointer(ev) {
     if (!pointer) return;
@@ -1905,6 +2231,25 @@
   document.addEventListener("keydown", function (ev) {
     var tag = (ev.target && ev.target.tagName) || "";
     if (/INPUT|SELECT|TEXTAREA/.test(tag)) return;
+
+    if (ev.key === "Escape" && !$("glossary").classList.contains("hidden")) {
+      $("glossary").classList.add("hidden");
+      return;
+    }
+
+    if (G.screen === "running") {
+      var k = (ev.key || "").toLowerCase();
+      if (ev.key === " " || ev.key === "Spacebar" || k === "s") {
+        if (G.paused) {
+          ev.preventDefault();
+          stepOnce();
+        }
+      } else if (k === "a" && G.paused) {
+        resumeAuto();
+      }
+      return;
+    }
+
     if (G.screen !== "placing") return;
 
     if (ev.key === "1" || ev.key === "2" || ev.key === "3") {
@@ -1963,7 +2308,10 @@
     G.lastFrame = nowMs();
     G.fx = {};
     G.laneFx = {};
-    G.waveStats = { placement: 0, penalty: 0, prediction: 0, bonus: 0, fifo: 0, fifoOk: true };
+    G.waveStats = { placement: 0, penalty: 0, prediction: 0, bonus: 0, fifo: 0, fifoOk: true, quiz: 0 };
+    G.quiz = { answers: [], correct: [] };
+    G.hover = null;
+    G.paused = false;
     G.engine = newEngine();
     G.screen = "placing";
     lastEventCount = -1;
@@ -1972,6 +2320,7 @@
     if (!opts.silent) {
       toast("Oleada " + (index + 1) + " · " + WAVES[index].name, "info");
     }
+    updateStepUI();
     renderAll();
   }
 
@@ -1984,10 +2333,48 @@
     }
     G.screen = "running";
     G.acc = 0;
+    G.paused = G.speed === 0;
     G.lastFrame = nowMs();
     G.selected = null;
+    updateStepUI();
     updateHud();
     renderAll();
+    if (G.paused) toast("Modo manual: pulsa Paso › (o la barra espaciadora) para avanzar tick a tick.", "info");
+  }
+
+  function stepOnce() {
+    if (G.screen !== "running") return;
+    G.engine.step();
+    if (G.engine.isIdle()) {
+      finishWave();
+      updateStepUI();
+      return;
+    }
+    updateHud();
+    renderScores();
+    renderEvents();
+    renderTrace();
+  }
+
+  function updateStepUI() {
+    var running = G.screen === "running";
+    $("btnStep").classList.toggle("hidden", !running);
+    $("btnAuto").classList.toggle("hidden", !running);
+    $("btnStep").disabled = !G.paused;
+    $("btnAuto").disabled = !G.paused;
+  }
+
+  function resumeAuto() {
+    if (G.screen !== "running") return;
+    if (G.speed === 0) {
+      G.speed = 4;
+      $("speed").value = "4";
+    }
+    G.paused = false;
+    G.lastFrame = nowMs();
+    G.acc = 0;
+    updateStepUI();
+    toast("Simulación fluida reanudada.", "info");
   }
 
   function finishWave() {
@@ -2048,6 +2435,7 @@
     G.actualOrder = actual;
 
     showResult();
+    updateStepUI();
     renderAll();
   }
 
@@ -2087,13 +2475,88 @@
     );
   }
 
+  function quizPack() {
+    var packs = window.PuertoQuiz;
+    return packs && packs[G.waveIndex] ? packs[G.waveIndex] : null;
+  }
+
+  function waveTotalValue() {
+    var r = G.result;
+    if (!r) return 0;
+    return G.waveStats.placement - G.waveStats.penalty + r.predPoints + r.bonus +
+      r.fifoBonus + (G.waveStats.quiz || 0);
+  }
+
+  function quizHtml() {
+    var pack = quizPack();
+    if (!pack) return "";
+    var items = pack.questions.map(function (q, qi) {
+      var picked = G.quiz.answers[qi];
+      var answered = picked != null;
+      var opts = q.options.map(function (opt, oi) {
+        var cls = "quiz-opt";
+        if (answered) {
+          if (oi === q.answer) cls += " ok";
+          else if (oi === picked) cls += " bad";
+          else cls += " dim";
+        }
+        return '<button class="' + cls + '" data-quiz="' + qi + ":" + oi + '"' +
+          (answered ? " disabled" : "") + ">" + esc(opt) + "</button>";
+      }).join("");
+      var why = "";
+      if (answered) {
+        var ok = picked === q.answer;
+        why = '<p class="quiz-why ' + (ok ? "ok" : "bad") + '">' +
+          (ok ? "✓ Correcto. " : "✗ Casi. La verde es la correcta. ") +
+          esc(q.why) + "</p>";
+      }
+      return '<div class="quiz-q"><p class="qq">' + esc(q.prompt) + "</p>" +
+        '<div class="quiz-opts">' + opts + "</div>" + why + "</div>";
+    }).join("");
+    return '<div class="quiz"><div class="quiz-head"><b>Reto de aula · ' + esc(pack.title) + "</b>" +
+      '<span class="badge">+50 por acierto</span></div>' + items + "</div>";
+  }
+
+  function refreshQuiz() {
+    var el = overlay.querySelector(".quiz");
+    if (el) el.outerHTML = quizHtml();
+    var wt = document.getElementById("waveTotal");
+    if (wt) wt.textContent = "+" + waveTotalValue();
+    var qs = document.getElementById("quizScore");
+    if (qs) {
+      var q = G.waveStats.quiz || 0;
+      qs.textContent = q ? "+" + q : "—";
+      qs.className = q ? "" : "muted";
+    }
+  }
+
+  function answerQuiz(qi, oi) {
+    var pack = quizPack();
+    if (!pack || !pack.questions[qi]) return;
+    if (G.quiz.answers[qi] != null) return;
+    var q = pack.questions[qi];
+    G.quiz.answers[qi] = oi;
+    var ok = oi === q.answer;
+    G.quiz.correct[qi] = ok;
+    if (ok) {
+      G.waveStats.quiz = (G.waveStats.quiz || 0) + 50;
+      G.points += 50;
+      updateHud();
+      renderScores();
+      toast("✓ +50 · reto de aula resuelto", "ok");
+    } else {
+      toast("✗ Respuesta incorrecta. Lee la explicación.", "bad");
+    }
+    refreshQuiz();
+  }
+
   function showResult() {
     var r = G.result;
     var wave = currentWave();
     var isLast = G.waveIndex === WAVES.length - 1;
     var placement = G.waveStats.placement;
     var penalty = G.waveStats.penalty;
-    var waveTotal = placement - penalty + r.predPoints + r.bonus + r.fifoBonus;
+    var waveTotal = waveTotalValue();
 
     var actualLis = r.actual.map(function (uid, i) {
       return '<li><span class="n">' + (i + 1) + "</span>" +
@@ -2124,7 +2587,7 @@
         '<span class="eyebrow">Oleada ' + (G.waveIndex + 1) + " · " + esc(wave.name) + "</span>" +
         "<h2>" + verdict + (r.perfect ? " <em>✓</em>" : "") + "</h2>" +
         '<div class="ov-stats">' +
-          '<div class="ov-stat"><div class="v">+' + waveTotal + '</div><div class="l">puntos oleada</div></div>' +
+          '<div class="ov-stat"><div class="v" id="waveTotal">+' + waveTotal + '</div><div class="l">puntos oleada</div></div>' +
           '<div class="ov-stat"><div class="v">' + r.positionHits + "/" + r.actual.length + '</div><div class="l">posiciones</div></div>' +
           '<div class="ov-stat"><div class="v">' + r.pairHits + "/" + r.pairs + '</div><div class="l">parejas</div></div>' +
           '<div class="ov-stat"><div class="v">' + Math.max(0, G.lives) + '</div><div class="l">vidas</div></div>' +
@@ -2141,7 +2604,9 @@
           "<li><span>Parejas consecutivas (" + r.pairHits + " × 20)</span><b>+" + (r.pairHits * 20) + "</b></li>" +
           "<li><span>FIFO de wait intacto</span><b>" + (r.fifoOk ? "+100" : "—") + "</b></li>" +
           "<li><span>Marea perfecta</span><b>" + (r.bonus ? "+200" : "—") + "</b></li>" +
+          '<li><span>Reto de aula</span><b id="quizScore" class="muted">—</b></li>' +
         "</ul>" +
+        quizHtml() +
         '<div class="lesson"><b>Lo que acaba de pasar:</b> ' + esc(wave.lesson) + "</div>" +
         '<div class="ov-actions">' +
           '<button data-act="replay">⟲ Rebobinar oleada</button>' +
@@ -2211,6 +2676,12 @@
   }
 
   overlay.addEventListener("click", function (ev) {
+    var quizBtn = ev.target.closest("[data-quiz]");
+    if (quizBtn) {
+      var parts = quizBtn.getAttribute("data-quiz").split(":");
+      answerQuiz(parseInt(parts[0], 10), parseInt(parts[1], 10));
+      return;
+    }
     var btn = ev.target.closest("[data-act]");
     if (!btn) return;
     var act = btn.getAttribute("data-act");
@@ -2245,7 +2716,29 @@
     startWave(G.waveIndex, { replay: true });
   });
   $("speed").addEventListener("change", function () {
-    G.speed = parseInt(this.value, 10) || 4;
+    var v = parseInt(this.value, 10);
+    G.speed = isNaN(v) ? 4 : v;
+    if (G.screen === "running") {
+      G.paused = G.speed === 0;
+      G.lastFrame = nowMs();
+      G.acc = 0;
+      updateStepUI();
+      renderTrace();
+      if (G.paused) toast("Modo manual activado. Pulsa Paso › para avanzar tick a tick.", "info");
+    }
+  });
+
+  $("btnStep").addEventListener("click", stepOnce);
+  $("btnAuto").addEventListener("click", resumeAuto);
+
+  $("btnGlossary").addEventListener("click", function () {
+    $("glossary").classList.remove("hidden");
+  });
+  $("btnGlossaryClose").addEventListener("click", function () {
+    $("glossary").classList.add("hidden");
+  });
+  $("glossary").addEventListener("click", function (ev) {
+    if (ev.target === this) this.classList.add("hidden");
   });
 
   /* ================================================================== */
@@ -2269,9 +2762,9 @@
     var dt = Math.min(64, now - (G.lastFrame || now));
     G.lastFrame = now;
 
-    if (G.screen === "running") {
+    if (G.screen === "running" && !G.paused) {
       G.acc += dt;
-      var interval = 1000 / (10 * G.speed);
+      var interval = 1000 / (10 * Math.max(1, G.speed));
       var steps = 0;
       while (G.acc >= interval && G.screen === "running" && steps < 40) {
         G.acc -= interval;
@@ -2285,6 +2778,7 @@
       updateHud();
       renderScores();
       renderEvents();
+      renderTrace();
     }
 
     draw(now);
@@ -2310,6 +2804,10 @@
     togglePrediction: togglePrediction,
     undoLast: undoLast,
     sail: sail,
+    step: stepOnce,
+    answerQuiz: answerQuiz,
+    quizPack: quizPack,
+    waveTotalValue: waveTotalValue,
     finishWave: finishWave,
     engine: function () { return G.engine; }
   };
