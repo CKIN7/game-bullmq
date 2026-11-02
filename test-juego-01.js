@@ -263,6 +263,54 @@ console.log("\n[9] Banco de preguntas del aula (content/quiz-juego-01.js)");
   });
 }
 
+/* ------------------------------------------------------------------ */
+console.log("\n[10] Mapa de componentes (juego-01-el-puerto-de-redis.html)");
+/* ------------------------------------------------------------------ */
+
+{
+  const fs = require("fs");
+  const path = require("path");
+  const html = fs.readFileSync(
+    path.join(__dirname, "juego-01-el-puerto-de-redis.html"),
+    "utf8"
+  );
+
+  const requiredIds = [
+    "archMap", "archNow",
+    "arch-wait", "arch-prioritized", "arch-delayed",
+    "arch-move", "arch-worker", "arch-completed", "arch-failed", "arch-events",
+    "arch-e-router-wait", "arch-e-router-prio", "arch-e-router-delayed",
+    "arch-e-wait-move", "arch-e-prio-move", "arch-e-delayed-move",
+    "arch-e-move-worker", "arch-e-worker-completed", "arch-e-worker-events",
+    "rule-wait", "rule-prio", "rule-delay"
+  ];
+
+  requiredIds.forEach((id) => {
+    check(`el mapa incluye #${id}`, () => {
+      assert.ok(html.includes('id="' + id + '"'), "falta id=" + id);
+    });
+  });
+
+  check("el mapa dibuja los comandos Redis en las aristas", () => {
+    ["LPUSH", "ZPOPMIN", "RPOPLPUSH", "promote", "XADD"].forEach((cmd) => {
+      assert.ok(html.includes(">" + cmd + "<"), "falta la etiqueta " + cmd);
+    });
+  });
+
+  check("los nodos del mapa enlazan con el glosario", () => {
+    ["wait", "prio", "delayed", "fifo", "lock", "events"].forEach((term) => {
+      assert.ok(html.includes('id="glossary-' + term + '"'), "falta glossary-" + term);
+      assert.ok(html.includes('data-term="' + term + '"'), "falta data-term=" + term);
+    });
+  });
+
+  check("el canvas anima el flujo entre componentes", () => {
+    assert.ok(html.includes("function captureEngineFlow"));
+    assert.ok(html.includes("function drawFlow"));
+    assert.ok(html.includes("G.lastFocusEvent"));
+  });
+}
+
 console.log("\n----------------------------------------");
 console.log("  " + passed + " pasaron, " + failed + " fallaron");
 console.log("----------------------------------------");
