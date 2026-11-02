@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Juego 01 — El Puerto de Redis · BullMQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f5f0;
+    --card:#ffffff;
+    --line:#e9e3d6;
+    --line-soft:#f1ece2;
+    --ink:#14171e;
+    --ink2:#3a4256;
+    --muted:#7c7a72;
+    --primary:#2f6f5e;
+    --primary-soft:rgba(47,111,94,.08);
+    --accent:#c97b3f;
+    --accent-soft:rgba(201,123,63,.10);
+    --danger:#b06367;
+    --danger-soft:rgba(176,99,103,.10);
+    --slate:#5f7d8c;
+    --slate-soft:rgba(95,125,140,.10);
+    --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans:'Outfit', ui-sans-serif, system-ui, sans-serif;
+    --serif:'DM Serif Display', Georgia, serif;
+    --r:14px;
+    --sh:0 2px 8px rgba(0,0,0,.04);
+    --sh2:0 4px 16px -2px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .shell{max-width:1440px;margin:0 auto;padding:22px 24px 40px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--primary);background:var(--primary-soft);
+    border:1px solid rgba(47,111,94,.18);border-radius:999px;padding:4px 11px;
+  }
+  .topbar{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    gap:20px;flex-wrap:wrap;margin-bottom:16px;
+  }
+  .brand h1{
+    font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.4vw,44px);
+    line-height:1.04;letter-spacing:-.01em;margin:9px 0 0;
+  }
+  .brand h1 em{font-style:italic;color:var(--primary)}
+  .brand p{margin:5px 0 0;color:var(--muted);font-size:13.5px;max-width:62ch}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .hud .stat{
+    background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:7px 12px;min-width:78px;box-shadow:var(--sh);
+  }
+  .hud .v{font-family:var(--mono);font-size:17px;line-height:1.15;color:var(--ink)}
+  .hud .l{
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);margin-top:2px;
+  }
+  .hearts{color:var(--danger);letter-spacing:1px;font-size:16px}
+  .layout{
+    display:grid;grid-template-columns:minmax(0,1fr) 360px;
+    gap:18px;align-items:start;
+  }
+  .board{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;
+    box-shadow:var(--sh2);overflow:hidden;min-width:0;
+  }
+  .board-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:12px 16px;border-bottom:1px solid var(--line);background:#fdfcfa;
+  }
+  .board-title{
+    display:flex;align-items:center;gap:9px;
+    font-family:var(--mono);font-size:12px;color:var(--ink2);
+  }
+  .board-title b{font-weight:500;color:var(--ink)}
+  .pulse{
+    width:8px;height:8px;border-radius:50%;background:var(--primary);
+    box-shadow:0 0 0 4px var(--primary-soft);
+  }
+  .actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+  button{
+    font-family:var(--sans);font-size:13px;font-weight:500;color:var(--ink);
+    background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:7px 12px;cursor:pointer;transition:all .16s ease;
+  }
+  button:hover:not(:disabled){border-color:var(--primary);color:var(--primary);transform:translateY(-1px)}
+  button:disabled{opacity:.42;cursor:not-allowed;transform:none}
+  button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  button.primary:hover:not(:disabled){background:#285c4d;color:#fff}
+  button.sm{padding:5px 9px;font-size:12px}
+  select{
+    font-family:var(--mono);font-size:11.5px;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:6px 8px;
+  }
+  select:focus,button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+  .canvas-wrap{position:relative;background:#faf8f4}
+  canvas{display:block;width:100%;touch-action:none}
+  .board-foot{
+    display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    padding:9px 16px;border-top:1px solid var(--line);
+    background:#fdfcfa;color:var(--muted);font-size:12px;
+  }
+  .board-foot kbd{
+    font-family:var(--mono);font-size:10px;border:1px solid var(--line);
+    border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;color:var(--ink2);
+  }
+  .side{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .panel{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px 15px;box-shadow:var(--sh);
+  }
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+  .panel h3{margin:0;font-size:14px;font-weight:600;letter-spacing:-.005em}
+  .badge{
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;
+    color:var(--muted);background:#faf8f4;border:1px solid var(--line);
+    border-radius:5px;padding:2px 6px;white-space:nowrap;
+  }
+  .badge.ok{color:var(--primary);border-color:rgba(47,111,94,.3);background:var(--primary-soft)}
+  .badge.bad{color:var(--danger);border-color:rgba(176,99,103,.3);background:var(--danger-soft)}
+  .note{margin:0 0 9px;color:var(--muted);font-size:12px;line-height:1.45}
+  .rule-row{
+    display:grid;grid-template-columns:9px 1fr auto;gap:8px;align-items:center;
+    font-size:11.5px;padding:3px 0;color:var(--ink2);
+  }
+  .rule-row code{font-size:10.5px}
+  .rule-row .arrow{color:var(--muted);font-family:var(--mono);font-size:10px}
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .dot.wait{background:var(--primary)}
+  .dot.prio{background:var(--accent)}
+  .dot.delay{background:var(--slate)}
+  code{
+    font-family:var(--mono);font-size:.87em;background:#faf8f4;
+    border:1px solid var(--line-soft);border-radius:4px;padding:1px 4px;color:var(--ink);
+  }
+  .pred-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:4px}
+  .pred-list li{
+    display:flex;gap:8px;align-items:center;padding:4px 7px;min-height:28px;
+    border:1px dashed var(--line);border-radius:7px;font-size:11.5px;
+  }
+  .pred-list li.filled{border-style:solid;background:#fdfcfa;cursor:pointer}
+  .pred-list li.filled:hover{border-color:var(--danger);background:var(--danger-soft)}
+  .pred-list li .n{
+    width:19px;height:19px;border-radius:50%;background:var(--line-soft);
+    display:grid;place-items:center;font-family:var(--mono);font-size:9.5px;
+    color:var(--muted);flex:none;
+  }
+  .pred-list li.filled .n{background:var(--primary);color:#fff}
+  .pred-list li .nm{
+    font-family:var(--mono);font-size:10.5px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;
+  }
+  .pred-list li.empty-li{color:var(--muted);font-style:italic;justify-content:center}
+  .muted{color:var(--muted)}
+  .score-group{margin-bottom:7px}
+  .score-group:last-child{margin-bottom:0}
+  .sg-head{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:3px;
+  }
+  .score-row{
+    display:grid;grid-template-columns:1fr auto;gap:1px 8px;
+    padding:3px 0;border-bottom:1px dashed var(--line-soft);
+  }
+  .score-row:last-child{border-bottom:none}
+  .score-row .nm{
+    font-family:var(--mono);font-size:10.5px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;
+  }
+  .score-row .sc{font-family:var(--mono);font-size:10.5px;color:var(--accent)}
+  .score-row .fm{grid-column:1/-1;font-family:var(--mono);font-size:9px;color:var(--muted)}
+  .evtlog{
+    font-family:var(--mono);font-size:10px;line-height:1.5;color:#cfd3e0;
+    background:#1a1a2e;border-radius:9px;padding:9px 10px;
+    height:150px;overflow-y:auto;
+  }
+  .evtlog .t{color:#6c6f85;margin-right:5px;white-space:nowrap}
+  .evtlog .tx{word-break:break-word}
+  .evtlog div{margin-bottom:1px}
+  .ev-add .tx{color:#8fd6c4}
+  .ev-move .tx,.ev-active .tx{color:#a9b6e8}
+  .ev-complete .tx{color:#9fe08f}
+  .ev-promote .tx{color:#f0b775}
+  .ev-fail .tx,.ev-stall .tx{color:#e2a0a5}
+  .ev-lock .tx{color:#7b7b92}
+  .overlay{
+    position:absolute;inset:0;z-index:10;display:grid;place-items:center;
+    padding:22px;background:rgba(20,23,30,.46);backdrop-filter:blur(4px);
+    overflow:auto;
+  }
+  .overlay.hidden{display:none}
+  .ov-card{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.28);padding:26px 28px;
+    max-width:664px;width:100%;max-height:100%;overflow:auto;
+    animation:ovIn .26s ease both;
+  }
+  @keyframes ovIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+  .ov-card h2{
+    font-family:var(--serif);font-weight:400;font-size:clamp(24px,3vw,32px);
+    line-height:1.08;letter-spacing:-.01em;margin:12px 0 9px;
+  }
+  .ov-card h2 em{font-style:italic;color:var(--primary)}
+  .ov-lede{margin:0 0 14px;color:var(--ink2);font-size:14px;line-height:1.55}
+  .rule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0}
+  .rule{border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fdfcfa}
+  .rh{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .rk{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+  .rt{
+    font-family:var(--mono);font-size:9px;color:var(--muted);
+    border:1px solid var(--line);border-radius:4px;padding:0 4px;
+  }
+  .rule p{margin:6px 0 0;font-size:11.5px;color:var(--ink2);line-height:1.42}
+  .ov-callout{
+    background:var(--primary-soft);border:1px solid rgba(47,111,94,.18);
+    border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--ink2);
+    margin:13px 0 16px;line-height:1.5;
+  }
+  .ov-callout b{color:var(--ink)}
+  .big{width:100%;padding:11px 16px;font-size:14.5px}
+  .ov-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:14px 0}
+  .ov-stat{background:#fdfcfa;border:1px solid var(--line);border-radius:9px;padding:8px 9px}
+  .ov-stat .v{font-family:var(--mono);font-size:19px;line-height:1.15;color:var(--ink)}
+  .ov-stat .l{
+    font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--muted);margin-top:2px;
+  }
+  .order-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  .order-col h4{
+    margin:0 0 6px;font-family:var(--mono);font-size:9.5px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;
+  }
+  .order{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .order li{
+    display:flex;gap:7px;align-items:center;font-size:11.5px;
+    border:1px solid var(--line);border-radius:6px;padding:4px 7px;background:#fff;
+  }
+  .order li .n{
+    width:18px;height:18px;border-radius:50%;background:var(--line-soft);
+    display:grid;place-items:center;font-family:var(--mono);font-size:9px;
+    color:var(--muted);flex:none;
+  }
+  .order li.ok{border-color:rgba(47,111,94,.35);background:var(--primary-soft)}
+  .order li.ok .n{background:var(--primary);color:#fff}
+  .order li.miss{border-color:rgba(176,99,103,.32);background:var(--danger-soft);color:var(--danger)}
+  .order li.miss .n{background:var(--danger);color:#fff}
+  .breakdown{list-style:none;margin:12px 0;padding:0;font-size:12px}
+  .breakdown li{
+    display:flex;justify-content:space-between;gap:10px;
+    padding:4px 0;border-bottom:1px dashed var(--line-soft);color:var(--ink2);
+  }
+  .breakdown li:last-child{border-bottom:none}
+  .breakdown b{font-family:var(--mono);font-weight:500;color:var(--ink)}
+  .breakdown b.bad{color:var(--danger)}
+  .lesson{
+    background:var(--accent-soft);border-left:3px solid var(--accent);
+    border-radius:8px;padding:11px 13px;font-size:12.5px;color:var(--ink2);
+    line-height:1.5;margin:12px 0;
+  }
+  .lesson b{color:var(--ink)}
+  .lesson ul{margin:6px 0 0;padding-left:18px}
+  .lesson li{margin:3px 0}
+  .ov-actions{display:flex;gap:9px;margin-top:15px;flex-wrap:wrap}
+  .ov-actions button{flex:1 1 180px}
+  .ghost-link{
+    display:inline-flex;align-items:center;justify-content:center;flex:1 1 160px;
+    font-size:13px;color:var(--primary);text-decoration:none;
+    border:1px solid var(--line);border-radius:8px;padding:8px 12px;
+  }
+  .ghost-link:hover{border-color:var(--primary)}
+  .toast{
+    position:fixed;left:50%;bottom:22px;z-index:60;
+    transform:translate(-50%,14px);opacity:0;pointer-events:none;
+    background:var(--ink2);color:#fff;border-radius:999px;
+    padding:9px 18px;font-size:12.5px;text-align:center;
+    max-width:min(600px,92vw);box-shadow:0 10px 30px rgba(0,0,0,.24);
+    transition:opacity .2s ease,transform .2s ease;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.ok{background:var(--primary)}
+  .toast.bad{background:#a4535a}
+  .toast.info{background:var(--ink2)}
+  @media (max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .side{display:grid;grid-template-columns:repeat(2,1fr);align-items:start}
+  }
+  @media (max-width:700px){
+    .shell{padding:14px 12px 30px}
+    .hud{width:100%}
+    .hud .stat{flex:1 1 68px}
+    .side{grid-template-columns:1fr}
+    .rule-grid{grid-template-columns:1fr}
+    .order-grid{grid-template-columns:1fr}
+    .ov-stats{grid-template-columns:repeat(2,1fr)}
+    .canvas-wrap{overflow-x:auto}
+    .canvas-wrap canvas{min-width:680px}
+    .ov-card{padding:20px}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="eyebrow">Juego 01 · BullMQ v5 · Redis</span>
+      <h1>El Puerto de <em>Redis</em></h1>
+      <p>Clasifica contenedores entre una LIST y dos ZSET, predice el orden de salida y descubre por qué la prioridad no salta la cola.</p>
+    </div>
+    <div class="hud">
+      <div class="stat"><div class="v" id="hudWave">1 / 3</div><div class="l">oleada</div></div>
+      <div class="stat"><div class="v" id="hudPoints">0</div><div class="l">puntos</div></div>
+      <div class="stat"><div class="v hearts" id="hudLives">♥♥♥</div><div class="l">vidas</div></div>
+      <div class="stat"><div class="v" id="hudCombo">×0</div><div class="l">racha</div></div>
+      <div class="stat"><div class="v" id="hudClock">0.0s</div><div class="l">reloj virtual</div></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="board">
+      <div class="board-head">
+        <div class="board-title">
+          <span class="pulse"></span>
+          <span><b>bull:puerto</b> — estado de Redis</span>
+        </div>
+        <div class="actions">
+          <select id="speed" title="Velocidad de simulación">
+            <option value="1">1× · leer cada paso</option>
+            <option value="2">2×</option>
+            <option value="4" selected>4× · fluido</option>
+            <option value="8">8× · rápido</option>
+          </select>
+          <button id="btnUndo" class="sm" title="Deshacer la última colocación correcta">↶ Deshacer</button>
+          <button id="btnReplay" class="sm" title="Rebobinar esta oleada">⟲ Rebobinar</button>
+          <button id="btnSail" class="primary">▶ Zarpar</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="board" width="960" height="760" aria-label="Tablero del puerto de Redis"></canvas>
+        <div class="overlay hidden" id="overlay"></div>
+      </div>
+
+      <div class="board-foot">
+        <span id="hint">Arrastra los contenedores del muelle a su estructura.</span>
+        <span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> colocan · <kbd>Enter</kbd> zarpa · <kbd>U</kbd> deshace</span>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Regla de entrada</h3>
+          <span class="badge">addStandardJob</span>
+        </div>
+        <div class="rule-row"><span class="dot delay"></span><span><code>delay &gt; 0</code></span><span class="arrow">→ delayed</span></div>
+        <div class="rule-row"><span class="dot prio"></span><span><code>priority &gt; 0</code></span><span class="arrow">→ prioritized</span></div>
+        <div class="rule-row"><span class="dot wait"></span><span>resto</span><span class="arrow">→ wait</span></div>
+        <p class="note" style="margin-top:7px;margin-bottom:0"><b>priority: 0</b> significa <em>sin prioridad</em>, no máxima. La LIST <code>wait</code> se drena entera antes del ZSET.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Predicción del orden</h3>
+          <span class="badge" id="predCount">0 / 0</span>
+        </div>
+        <p class="note">Haz clic en los contenedores ya colocados, en el orden en que crees que se procesarán. Vuelve a hacer clic para quitarlos.</p>
+        <ol class="pred-list" id="predList"></ol>
+        <button class="sm" id="btnClearPred" style="width:100%">Borrar predicción</button>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Score inspector</h3>
+          <span class="badge ok" id="scoreStatus">ZSET ordenado</span>
+        </div>
+        <div id="scoreBody"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Stream de eventos</h3>
+          <span class="badge">bull:puerto:events</span>
+        </div>
+        <div class="evtlog" id="evtLog"></div>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="engine/bullmq-sim.js"></script>
+<script src="engine/waves-juego-01.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ================================================================== */
+  /* 0. Utilidades                                                       */
+  /* ================================================================== */
+
+  var $ = function (id) { return document.getElementById(id); };
+  var canvas = $("board");
+  var ctx = canvas.getContext("2d");
+  var overlay = $("overlay");
+
+  var W = 960;
+  var H = 760;
+  var PRIORITY_MULT = BullMQSim.PRIORITY_MULT;
+  var ZONES = ["wait", "prioritized", "delayed"];
+
+  var ZONE_COLOR = {
+    wait: "#2f6f5e",
+    prioritized: "#c97b3f",
+    delayed: "#5f7d8c"
+  };
+  var ZONE_SOFT = {
+    wait: "rgba(47,111,94,.08)",
+    prioritized: "rgba(201,123,63,.10)",
+    delayed: "rgba(95,125,140,.10)"
+  };
+  var ZONE_LABEL = {
+    wait: "wait · LIST",
+    prioritized: "prioritized · ZSET",
+    delayed: "delayed · ZSET"
+  };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function fmt(ms) { return (ms / 1000).toFixed(1) + "s"; }
+  function nowMs() { return (typeof performance !== "undefined" ? performance.now() : Date.now()); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  /* ================================================================== */
+  /* 1. Oleadas (guion determinista)                                     */
+  /* ================================================================== */
+
+  var WAVES = window.PuertoWaves;
+
+  /* ================================================================== */
+  /* 2. Estado del juego                                                 */
+  /* ================================================================== */
+
+  var G = {
+    screen: "briefing",       // briefing | placing | running | result | gameover | victory
+    waveIndex: 0,
+    points: 0,
+    lives: 3,
+    combo: 0,
+    bestCombo: 0,
+    placed: [],               // { spec, zone, awarded, auto }
+    prediction: [],           // ids en orden predicho
+    selected: null,
+    engine: null,
+    speed: 4,
+    acc: 0,
+    lastFrame: 0,
+    checkpoint: { points: 0, lives: 3 },
+    waveStats: { placement: 0, penalty: 0, prediction: 0, bonus: 0 },
+    mistakes: [],
+    result: null,
+    actualOrder: [],
+    fx: {},                   // id -> { kind, t0 }
+    laneFx: {},               // zone -> { kind, t0 }
+    drag: null,               // { uid, x, y }
+    layout: { dock: [], lanes: { wait: [], prioritized: [], delayed: [] }, active: [], completed: [] },
+    toastTimer: null
+  };
+
+  var pointer = null;
+  var lastEventCount = -1;
+
+  /* ================================================================== */
+  /* 3. Motor                                                            */
+  /* ================================================================== */
+
+  function newEngine() {
+    return new BullMQSim.Engine({
+      queueName: "puerto",
+      concurrency: 2,
+      attempts: 1,
+      lockDuration: 30000
+    });
+  }
+
+  G.engine = newEngine();
+
+  function currentWave() { return WAVES[G.waveIndex]; }
+
+  function specById(uid) {
+    var jobs = currentWave().jobs;
+    for (var i = 0; i < jobs.length; i++) {
+      if (jobs[i].id === uid) return jobs[i];
+    }
+    return null;
+  }
+
+  function pendingItems() {
+    var placed = {};
+    G.placed.forEach(function (p) { placed[p.spec.id] = true; });
+    return currentWave().jobs.filter(function (job) { return !placed[job.id]; });
+  }
+
+  function isPlaced(uid) {
+    for (var i = 0; i < G.placed.length; i++) {
+      if (G.placed[i].spec.id === uid) return true;
+    }
+    return false;
+  }
+
+  function rebuildEngine() {
+    var engine = newEngine();
+    G.placed.forEach(function (p) { engine.addJob(p.spec); });
+    G.engine = engine;
+  }
+
+  function engineJob(uid) {
+    return (G.engine && G.engine.jobs[uid]) || null;
+  }
+
+  function laneEntries(zone) {
+    var list = G.placed.filter(function (p) { return p.zone === zone; });
+    if (zone === "wait") return list; // FIFO de colocación
+    return list.slice().sort(function (a, b) {
+      var ja = engineJob(a.spec.id);
+      var jb = engineJob(b.spec.id);
+      return (ja ? ja.score : 0) - (jb ? jb.score : 0);
+    });
+  }
+
+  /* ================================================================== */
+  /* 4. Layout del canvas                                                */
+  /* ================================================================== */
+
+  var DOCK = { x: 16, y: 16, w: 200, h: 728 };
+  var LANE_X = 232;
+  var LANE_W = 712;
+  var LANE_H = 180;
+  var LANE_GAP = 12;
+  var LANE_RECT = {
+    wait: { x: LANE_X, y: 16, w: LANE_W, h: LANE_H },
+    prioritized: { x: LANE_X, y: 16 + (LANE_H + LANE_GAP), w: LANE_W, h: LANE_H },
+    delayed: { x: LANE_X, y: 16 + 2 * (LANE_H + LANE_GAP), w: LANE_W, h: LANE_H }
+  };
+  var STATUS_Y = 16 + 3 * (LANE_H + LANE_GAP) + 12;
+  var PROC = { x: LANE_X, y: STATUS_Y, w: 400, h: H - STATUS_Y - 16 };
+  var DONE = { x: LANE_X + 416, y: STATUS_Y, w: LANE_W - 416, h: H - STATUS_Y - 16 };
+
+  function computeLayout() {
+    var layout = {
+      dock: [],
+      lanes: { wait: [], prioritized: [], delayed: [] },
+      active: [],
+      completed: []
+    };
+
+    if (!G.engine) return layout;
+
+    var pending = pendingItems();
+    var dh = 56;
+    var dgap = 8;
+    pending.forEach(function (spec, i) {
+      layout.dock.push({ uid: spec.id, x: 28, y: 64 + i * (dh + dgap), w: 176, h: dh });
+    });
+
+    var cw = 162;
+    var ch = 56;
+    var gap = 10;
+    var rowGap = 8;
+    ZONES.forEach(function (zone) {
+      var rect = LANE_RECT[zone];
+      laneEntries(zone).forEach(function (p, i) {
+        var col = i % 4;
+        var row = Math.floor(i / 4);
+        layout.lanes[zone].push({
+          uid: p.spec.id,
+          x: rect.x + 16 + col * (cw + gap),
+          y: rect.y + 54 + row * (ch + rowGap),
+          w: cw,
+          h: ch
+        });
+      });
+    });
+
+    var activeW = 176;
+    G.engine.active.forEach(function (entry, i) {
+      layout.active.push({
+        id: entry.id,
+        x: PROC.x + 16 + i * (activeW + 12),
+        y: PROC.y + 38,
+        w: activeW,
+        h: 86,
+        progress: entry.total > 0 ? 1 - entry.workLeft / entry.total : 1
+      });
+    });
+
+    G.engine.processingOrder.forEach(function (id, i) {
+      var col = i % 4;
+      var row = Math.floor(i / 4);
+      layout.completed.push({
+        id: id,
+        x: DONE.x + 14 + col * 66,
+        y: DONE.y + 40 + row * 30,
+        w: 60,
+        h: 24,
+        done: G.engine.completed.indexOf(id) >= 0
+      });
+    });
+
+    G.layout = layout;
+    return layout;
+  }
+
+  /* ================================================================== */
+  /* 5. Dibujo del canvas                                                */
+  /* ================================================================== */
+
+  function rr(x, y, w, h, r) {
+    if (w < 0) { x += w; w = -w; }
+    if (h < 0) { y += h; h = -h; }
+    r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function panelBg(rect) {
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.035)";
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 2;
+    rr(rect.x, rect.y, rect.w, rect.h, 14);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.restore();
+    rr(rect.x, rect.y, rect.w, rect.h, 14);
+    ctx.strokeStyle = "#e9e3d6";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function ellipsis(text, maxW, font) {
+    ctx.font = font;
+    if (ctx.measureText(text).width <= maxW) return text;
+    var t = String(text);
+    while (t.length > 1 && ctx.measureText(t + "…").width > maxW) {
+      t = t.slice(0, -1);
+    }
+    return t + "…";
+  }
+
+  function zoneOf(uid) {
+    for (var i = 0; i < G.placed.length; i++) {
+      if (G.placed[i].spec.id === uid) return G.placed[i].zone;
+    }
+    return null;
+  }
+
+  function drawJobChip(o) {
+    var job = o.job;
+    if (!job) return;
+    var x = o.x, y = o.y, w = o.w, h = o.h;
+    var zone = o.zone || "wait";
+    var color = ZONE_COLOR[zone];
+    var predicted = o.predicted || 0;
+
+    var dx = 0;
+    var scale = 1;
+    var fx = o.fx;
+    var now = o.now || nowMs();
+    if (fx) {
+      var k = clamp((now - fx.t0) / 520, 0, 1);
+      if (k < 1) {
+        if (fx.kind === "bad") dx = Math.sin(k * Math.PI * 9) * 5 * (1 - k);
+        scale = 1 + 0.045 * Math.sin(k * Math.PI);
+      }
+    }
+
+    ctx.save();
+    ctx.translate(x + w / 2 + dx, y + h / 2);
+    ctx.scale(scale, scale);
+    var bx = -w / 2;
+    var by = -h / 2;
+
+    if (!o.ghost) {
+      ctx.shadowColor = "rgba(20,23,30,.06)";
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 1;
+    }
+    rr(bx, by, w, h, 10);
+    ctx.fillStyle = o.active ? ZONE_SOFT[zone] : (o.done ? "#f5f8f6" : "#ffffff");
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+
+    rr(bx, by, w, h, 10);
+    ctx.lineWidth = predicted || o.active ? 1.5 : 1;
+    ctx.strokeStyle = (predicted || o.active) ? color : "#e9e3d6";
+    ctx.stroke();
+
+    // id
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "500 10px " + "'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7c7a72";
+    ctx.fillText("#" + job.id, bx + 10, by + 19);
+
+    // nombre
+    var nameMax = w - 44 - (predicted ? 16 : 0);
+    ctx.font = "600 12px 'Outfit', sans-serif";
+    ctx.fillStyle = o.done ? "#7c7a72" : "#14171e";
+    ctx.fillText(ellipsis(job.name, nameMax, "600 12px 'Outfit', sans-serif"), bx + 30, by + 19);
+
+    // meta: prioridad
+    var pText = "p" + job.priority;
+    ctx.font = "500 10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = job.priority > 0 ? color : "#7c7a72";
+    ctx.fillText(pText, bx + 10, by + 39);
+
+    var metaX = bx + 10 + ctx.measureText(pText).width;
+    var scoreText = (o.score != null) ? String(o.score) : "";
+    var scoreW = 0;
+    if (scoreText) {
+      ctx.font = "500 9.5px 'JetBrains Mono', monospace";
+      scoreW = ctx.measureText(scoreText).width;
+    }
+    var metaMax = w - 20 - (scoreText ? scoreW + 10 : 0);
+    var meta = "";
+    if (job.delay > 0) meta = " · +" + fmt(job.delay);
+    else if (o.dock || !scoreText) meta = " · sin delay";
+    ctx.font = "500 10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7c7a72";
+    if (meta) {
+      ctx.fillText(ellipsis(meta, metaMax - (metaX - bx - 10), "500 10px 'JetBrains Mono', monospace"), metaX, by + 39);
+    }
+
+    if (scoreText) {
+      ctx.textAlign = "right";
+      ctx.font = "500 9.5px 'JetBrains Mono', monospace";
+      ctx.fillStyle = color;
+      ctx.fillText(scoreText, bx + w - 10, by + 39);
+      ctx.textAlign = "left";
+    }
+
+    // barra de progreso si está activo
+    if (o.active && typeof o.progress === "number") {
+      var pct = clamp(o.progress, 0, 1);
+      var barW = w - 20;
+      rr(bx + 10, by + h - 9, barW, 4, 2);
+      ctx.fillStyle = "#f1ece2";
+      ctx.fill();
+      rr(bx + 10, by + h - 9, barW * pct, 4, 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    // badge de predicción
+    if (predicted) {
+      ctx.beginPath();
+      ctx.arc(bx + w - 12, by + 12, 9, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "600 10px 'JetBrains Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(predicted), bx + w - 12, by + 12);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
+    ctx.restore();
+  }
+
+  function drawDock(now) {
+    panelBg(DOCK);
+
+    ctx.textAlign = "left";
+    ctx.font = "600 10.5px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7c7a72";
+    ctx.fillText("MUELLE DE LLEGADA", 28, 40);
+
+    var pending = pendingItems();
+    ctx.font = "11px 'Outfit', sans-serif";
+    ctx.fillStyle = "#7c7a72";
+    ctx.fillText(pending.length + (pending.length === 1 ? " contenedor" : " contenedores"), 28, 55);
+
+    if (!pending.length) {
+      ctx.font = "600 12px 'Outfit', sans-serif";
+      ctx.fillStyle = "#2f6f5e";
+      ctx.fillText("✓ Todo embarcado", 28, 96);
+      ctx.font = "11px 'Outfit', sans-serif";
+      ctx.fillStyle = "#7c7a72";
+      ctx.fillText("Predice el orden y", 28, 114);
+      ctx.fillText("pulsa Zarpar.", 28, 130);
+      return;
+    }
+
+    var layout = G.layout;
+    for (var i = 0; i < layout.dock.length; i++) {
+      var slot = layout.dock[i];
+      var spec = specById(slot.uid);
+      if (!spec) continue;
+      drawJobChip({
+        x: slot.x, y: slot.y, w: slot.w, h: slot.h,
+        job: spec,
+        zone: BullMQSim.zoneFor(spec),
+        score: null,
+        dock: true,
+        selected: G.selected === spec.id,
+        now: now
+      });
+      if (G.selected === spec.id) {
+        rr(slot.x - 2, slot.y - 2, slot.w + 4, slot.h + 4, 11);
+        ctx.strokeStyle = "#c97b3f";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawLane(zone, now) {
+    var rect = LANE_RECT[zone];
+    var color = ZONE_COLOR[zone];
+    var entries = laneEntries(zone);
+
+    panelBg(rect);
+
+    // barra de acento
+    ctx.save();
+    rr(rect.x, rect.y, rect.w, rect.h, 14);
+    ctx.clip();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(rect.x, rect.y, 4, rect.h);
+    ctx.restore();
+
+    // cabecera
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "600 12.5px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#14171e";
+    ctx.fillText("bull:puerto:" + zone, rect.x + 18, rect.y + 26);
+
+    var type = zone === "wait" ? "LIST" : "ZSET";
+    ctx.font = "500 9.5px 'JetBrains Mono', monospace";
+    var tw = ctx.measureText(type).width + 12;
+    rr(rect.x + rect.w - tw - 16, rect.y + 14, tw, 18, 5);
+    ctx.fillStyle = ZONE_SOFT[zone];
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.fillText(type, rect.x + rect.w - 16 - tw / 2, rect.y + 26);
+    ctx.textAlign = "left";
+
+    var subtitle = zone === "wait"
+      ? "FIFO · se drena ENTERA antes que el ZSET"
+      : zone === "prioritized"
+        ? "score = priority × 2³² + contador"
+        : "score = timestamp × 4096 + offset";
+    ctx.font = "11px 'Outfit', sans-serif";
+    ctx.fillStyle = "#7c7a72";
+    ctx.fillText(subtitle, rect.x + 18, rect.y + 44);
+
+    ctx.textAlign = "right";
+    ctx.font = "500 10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = entries.length ? color : "#7c7a72";
+    ctx.fillText(entries.length + (entries.length === 1 ? " job" : " jobs"), rect.x + rect.w - 18, rect.y + 44);
+    ctx.textAlign = "left";
+
+    // resaltado de drop
+    if (G.drag) {
+      var hover = hitLane(G.drag.x, G.drag.y);
+      if (hover === zone) {
+        rr(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2, 13);
+        ctx.fillStyle = ZONE_SOFT[zone];
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    // vacío
+    if (!entries.length) {
+      ctx.font = "italic 12px 'Outfit', sans-serif";
+      ctx.fillStyle = "#a8a59c";
+      ctx.textAlign = "center";
+      ctx.fillText("vacía · suelta aquí", rect.x + rect.w / 2, rect.y + 112);
+      ctx.textAlign = "left";
+    }
+
+    // chips
+    var chips = G.layout.lanes[zone];
+    for (var i = 0; i < chips.length; i++) {
+      var slot = chips[i];
+      var job = engineJob(slot.uid);
+      if (!job) continue;
+      drawJobChip({
+        x: slot.x, y: slot.y, w: slot.w, h: slot.h,
+        job: job,
+        zone: zone,
+        score: job.score,
+        predicted: G.prediction.indexOf(slot.uid) + 1,
+        fx: G.fx[slot.uid],
+        now: now
+      });
+    }
+
+    // flash de zona
+    var lfx = G.laneFx[zone];
+    if (lfx && now - lfx.t0 < 620) {
+      var k = 1 - (now - lfx.t0) / 620;
+      ctx.save();
+      ctx.globalAlpha = k * 0.9;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = lfx.kind === "bad" ? "#b06367" : color;
+      rr(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2, 13);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawStatus(now) {
+    // en proceso
+    panelBg(PROC);
+    ctx.textAlign = "left";
+    ctx.font = "600 10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7c7a72";
+    ctx.fillText("MOTOR · moveToActive", PROC.x + 16, PROC.y + 23);
+
+    if (G.screen === "running" || G.screen === "result") {
+      if (!G.layout.active.length) {
+        ctx.font = "italic 11.5px 'Outfit', sans-serif";
+        ctx.fillStyle = "#a8a59c";
+        ctx.fillText("esperando jobs…", PROC.x + 16, PROC.y + 70);
+      }
+      G.layout.active.forEach(function (slot) {
+        var job = engineJob(slot.id);
+        if (!job) return;
+        drawJobChip({
+          x: slot.x, y: slot.y, w: slot.w, h: slot.h,
+          job: job,
+          zone: zoneOf(slot.id) || "wait",
+          score: job.score,
+          active: true,
+          progress: slot.progress,
+          now: now
+        });
+      });
+    } else {
+      var steps = [
+        { label: "1 · Coloca los contenedores en su estructura", done: G.placed.length === currentWave().jobs.length },
+        { label: "2 · Predice el orden de salida", done: G.prediction.length === currentWave().jobs.length },
+        { label: "3 · Pulsa Zarpar y observa moveToActive", done: false }
+      ];
+      steps.forEach(function (step, i) {
+        ctx.font = "11.5px 'Outfit', sans-serif";
+        ctx.fillStyle = step.done ? "#2f6f5e" : "#3a4256";
+        ctx.fillText((step.done ? "✓ " : "○ ") + step.label, PROC.x + 16, PROC.y + 52 + i * 26);
+      });
+    }
+
+    // completados
+    panelBg(DONE);
+    ctx.textAlign = "left";
+    ctx.font = "600 10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#7c7a72";
+    ctx.fillText("ORDEN REAL · activados", DONE.x + 14, DONE.y + 23);
+
+    if (!G.layout.completed.length) {
+      ctx.font = "italic 11px 'Outfit', sans-serif";
+      ctx.fillStyle = "#a8a59c";
+      ctx.fillText("aún ninguno", DONE.x + 14, DONE.y + 46);
+    }
+
+    G.layout.completed.forEach(function (slot, i) {
+      rr(slot.x, slot.y, slot.w, slot.h, 6);
+      ctx.fillStyle = "#f5f8f6";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(47,111,94,.22)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.font = "600 9.5px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "#2f6f5e";
+      ctx.fillText("#" + slot.id + (slot.done ? " ✓" : " ▶"), slot.x + slot.w / 2, slot.y + 16);
+      ctx.textAlign = "left";
+    });
+  }
+
+  function drawGhost(now) {
+    if (!G.drag) return;
+    var spec = specById(G.drag.uid);
+    if (!spec) return;
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    drawJobChip({
+      x: G.drag.x - 80, y: G.drag.y - 28, w: 160, h: 56,
+      job: spec,
+      zone: BullMQSim.zoneFor(spec),
+      score: null,
+      ghost: true,
+      now: now
+    });
+    ctx.restore();
+  }
+
+  function draw(now) {
+    now = now || nowMs();
+    if (!canvas.width || !canvas.height || !G.engine) return;
+    ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "#faf8f4";
+    ctx.fillRect(0, 0, W, H);
+
+    computeLayout();
+    drawDock(now);
+    for (var i = 0; i < ZONES.length; i++) drawLane(ZONES[i], now);
+    drawStatus(now);
+    drawGhost(now);
+  }
+
+  /* ================================================================== */
+  /* 6. Paneles HTML                                                     */
+  /* ================================================================== */
+
+  function updateHud() {
+    $("hudWave").textContent = (G.waveIndex + 1) + " / " + WAVES.length;
+    $("hudPoints").textContent = Math.round(G.points);
+    $("hudLives").textContent = "♥".repeat(Math.max(0, G.lives)) + "♡".repeat(Math.max(0, 3 - G.lives));
+    $("hudCombo").textContent = "×" + G.combo;
+    $("hudClock").textContent = fmt(G.engine ? G.engine.clock : 0);
+
+    var total = currentWave().jobs.length;
+    $("btnSail").disabled = G.screen !== "placing" || G.placed.length < total;
+    $("btnUndo").disabled = G.screen !== "placing" || !G.placed.length ||
+      !!G.placed[G.placed.length - 1].auto;
+    $("btnReplay").disabled = G.screen === "briefing" || G.screen === "running";
+
+    var hint;
+    if (G.screen === "placing") {
+      if (G.placed.length < total) {
+        hint = "Arrastra los contenedores del muelle a su estructura. Quedan " + (total - G.placed.length) + ".";
+      } else {
+        hint = "Todo colocado. Haz clic en los contenedores para predecir el orden y pulsa Zarpar.";
+      }
+    } else if (G.screen === "running") {
+      hint = "moveToActive: primero RPOPLPUSH desde wait; solo si está vacía, ZPOPMIN en prioritized.";
+    } else if (G.screen === "result") {
+      hint = "Rebobina y prueba otro reparto, o pasa a la siguiente oleada.";
+    } else if (G.screen === "gameover") {
+      hint = "Sin vidas. Rebobina la oleada: el motor es determinista, tus decisiones no.";
+    } else if (G.screen === "placing-locked") {
+      hint = "Sin vidas. El barco está a punto de zarpar sin ti…";
+    } else {
+      hint = "Lee el briefing y empieza la marea.";
+    }
+    $("hint").textContent = hint;
+  }
+
+  function renderPrediction() {
+    var jobs = currentWave().jobs;
+    var list = $("predList");
+    var html = "";
+    for (var i = 0; i < jobs.length; i++) {
+      var uid = G.prediction[i];
+      var spec = uid ? specById(uid) : null;
+      html += '<li class="' + (uid ? "filled" : "") + '"' +
+        (uid ? ' data-remove="' + esc(uid) + '"' : "") + '>' +
+        '<span class="n">' + (i + 1) + "</span>" +
+        '<span class="nm">' + (spec ? esc(spec.name) : '<span class="muted">sin asignar</span>') + "</span>" +
+        "</li>";
+    }
+    list.innerHTML = html;
+    var badge = $("predCount");
+    badge.textContent = G.prediction.length + " / " + jobs.length;
+    badge.className = "badge" + (G.prediction.length === jobs.length ? " ok" : "");
+  }
+
+  function renderScores() {
+    var prio = G.engine.sortedPrioritized();
+    var delayed = G.engine.sortedDelayed();
+    var html = "";
+
+    if (!prio.length && !delayed.length) {
+      html = '<p class="note" style="margin:0">Aún no hay ZSET. Coloca un contenedor con <code>priority &gt; 0</code> o con <code>delay</code>.</p>';
+    } else {
+      if (prio.length) {
+        html += '<div class="score-group"><div class="sg-head"><span>prioritized</span><span>ZSET</span></div>';
+        prio.forEach(function (entry) {
+          var job = engineJob(entry.id);
+          var counter = entry.score - job.priority * PRIORITY_MULT;
+          html += '<div class="score-row">' +
+            '<span class="nm">#' + esc(entry.id) + " " + esc(job.name) + "</span>" +
+            '<span class="sc">' + entry.score + "</span>" +
+            '<span class="fm">' + job.priority + " × 2³² + " + counter + "</span>" +
+            "</div>";
+        });
+        html += "</div>";
+      }
+      if (delayed.length) {
+        html += '<div class="score-group"><div class="sg-head"><span>delayed</span><span>ZSET</span></div>';
+        delayed.forEach(function (entry) {
+          var job = engineJob(entry.id);
+          var offset = entry.score - entry.at * BullMQSim.DELAY_MULT;
+          html += '<div class="score-row">' +
+            '<span class="nm">#' + esc(entry.id) + " " + esc(job.name) + "</span>" +
+            '<span class="sc">' + entry.score + "</span>" +
+            '<span class="fm">' + entry.at + " × 4096 + " + offset + "</span>" +
+            "</div>";
+        });
+        html += "</div>";
+      }
+    }
+    $("scoreBody").innerHTML = html;
+
+    var sorted = true;
+    for (var i = 1; i < prio.length; i++) {
+      if (prio[i].score < prio[i - 1].score) sorted = false;
+    }
+    var badge = $("scoreStatus");
+    badge.textContent = sorted ? "ZSET ordenado" : "ZSET desordenado";
+    badge.className = "badge " + (sorted ? "ok" : "bad");
+  }
+
+  function renderEvents(force) {
+    if (!force && G.engine.events.length === lastEventCount) return;
+    lastEventCount = G.engine.events.length;
+    var log = $("evtLog");
+    var events = G.engine.events.slice(-20);
+    if (!events.length) {
+      log.innerHTML = '<div><span class="t">—</span><span class="tx">sin eventos</span></div>';
+      return;
+    }
+    log.innerHTML = events.map(function (e) {
+      return '<div class="ev-' + esc(e.kind) + '" title="' + esc(e.cmd) + '">' +
+        '<span class="t">' + fmt(e.t).padStart(5, " ") + "</span>" +
+        '<span class="tx">' + esc(e.text) + "</span></div>";
+    }).join("");
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function renderAll() {
+    updateHud();
+    renderPrediction();
+    renderScores();
+    renderEvents(true);
+    draw();
+  }
+
+  /* ================================================================== */
+  /* 7. Toasts                                                           */
+  /* ================================================================== */
+
+  function toast(message, kind) {
+    var el = $("toast");
+    el.textContent = message;
+    el.className = "toast show " + (kind || "info");
+    if (G.toastTimer) clearTimeout(G.toastTimer);
+    G.toastTimer = setTimeout(function () {
+      el.className = "toast " + (kind || "info");
+    }, 3000);
+  }
+
+  /* ================================================================== */
+  /* 8. Interacción                                                      */
+  /* ================================================================== */
+
+  function pointerPos(ev) {
+    var r = canvas.getBoundingClientRect();
+    return {
+      x: (ev.clientX - r.left) / r.width * W,
+      y: (ev.clientY - r.top) / r.height * H
+    };
+  }
+
+  function hitDock(x, y) {
+    var list = G.layout.dock;
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h) return s.uid;
+    }
+    return null;
+  }
+
+  function hitLane(x, y) {
+    for (var i = 0; i < ZONES.length; i++) {
+      var r = LANE_RECT[ZONES[i]];
+      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return ZONES[i];
+    }
+    return null;
+  }
+
+  function hitLaneChip(x, y) {
+    for (var i = 0; i < ZONES.length; i++) {
+      var list = G.layout.lanes[ZONES[i]];
+      for (var j = 0; j < list.length; j++) {
+        var s = list[j];
+        if (x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h) return s.uid;
+      }
+    }
+    return null;
+  }
+
+  function zoneReason(spec, zone) {
+    var expected = BullMQSim.zoneFor(spec);
+    if (expected === "delayed") {
+      return "tiene delay " + fmt(spec.delay) + ": nace en delayed (ZSET) y se promueve al vencer.";
+    }
+    if (expected === "prioritized") {
+      return "tiene priority " + spec.priority + " (> 0): va al ZSET prioritized.";
+    }
+    return "tiene priority 0 y delay 0: va a la LIST wait. priority 0 significa SIN prioridad.";
+  }
+
+  function tryPlace(uid, zone) {
+    if (G.screen !== "placing" || G.lives <= 0) return;
+    if (isPlaced(uid)) return;
+    var spec = specById(uid);
+    if (!spec) return;
+
+    var expected = BullMQSim.zoneFor(spec);
+    var isRight = zone === expected;
+
+    if (isRight) {
+      var reward = 100 + Math.min(G.combo * 10, 50);
+      G.points += reward;
+      G.waveStats.placement += reward;
+      G.combo++;
+      G.bestCombo = Math.max(G.bestCombo, G.combo);
+      G.placed.push({ spec: spec, zone: zone, awarded: reward, auto: false });
+      G.engine.addJob(spec);
+      G.fx[uid] = { kind: "ok", t0: nowMs() };
+      G.laneFx[zone] = { kind: "ok", t0: nowMs() };
+      toast("✓ " + spec.name + " → " + zone + "   +" + reward, "ok");
+    } else {
+      G.lives--;
+      G.points = Math.max(0, G.points - 50);
+      G.waveStats.penalty += 50;
+      G.combo = 0;
+      G.mistakes.push({ name: spec.name, zone: zone, expected: expected });
+      G.placed.push({ spec: spec, zone: expected, awarded: 0, auto: true });
+      G.engine.addJob(spec);
+      G.fx[uid] = { kind: "ok", t0: nowMs() };
+      G.laneFx[zone] = { kind: "bad", t0: nowMs() };
+      G.laneFx[expected] = { kind: "ok", t0: nowMs() };
+      toast("✗ " + spec.name + " no va en " + zone + ". " + zoneReason(spec, zone), "bad");
+    }
+
+    G.selected = null;
+    G.drag = null;
+
+    if (G.lives <= 0) {
+      G.screen = "placing-locked";
+      setTimeout(function () {
+        if (G.lives <= 0) showGameOver();
+      }, 850);
+    }
+
+    renderAll();
+  }
+
+  function togglePrediction(uid) {
+    if (G.screen !== "placing") return;
+    var i = G.prediction.indexOf(uid);
+    if (i >= 0) {
+      G.prediction.splice(i, 1);
+    } else {
+      if (G.prediction.length >= currentWave().jobs.length) {
+        toast("Ya has predicho todos los jobs. Quita uno para cambiarlo.", "info");
+        return;
+      }
+      G.prediction.push(uid);
+    }
+    renderAll();
+  }
+
+  function undoLast() {
+    if (G.screen !== "placing" || !G.placed.length) return;
+    var last = G.placed[G.placed.length - 1];
+    if (last.auto) {
+      toast("Esa colocación fue una corrección automática: no se puede deshacer.", "info");
+      return;
+    }
+    G.placed.pop();
+    G.points = Math.max(0, G.points - last.awarded);
+    G.waveStats.placement -= last.awarded;
+    G.prediction = G.prediction.filter(function (id) { return id !== last.spec.id; });
+    G.selected = null;
+    rebuildEngine();
+    toast("Deshecho: " + last.spec.name, "info");
+    renderAll();
+  }
+
+  canvas.addEventListener("pointerdown", function (ev) {
+    if (G.screen !== "placing" || G.lives <= 0) return;
+    var p = pointerPos(ev);
+    var dockUid = hitDock(p.x, p.y);
+    if (dockUid) {
+      G.selected = dockUid;
+      pointer = { mode: "dock", uid: dockUid, x0: p.x, y0: p.y, x: p.x, y: p.y, moved: false };
+      if (canvas.setPointerCapture) canvas.setPointerCapture(ev.pointerId);
+      ev.preventDefault();
+      renderAll();
+      return;
+    }
+
+    var lane = hitLane(p.x, p.y);
+    if (lane && G.selected) {
+      pointer = { mode: "lane", zone: lane, x0: p.x, y0: p.y, x: p.x, y: p.y, moved: false };
+      return;
+    }
+
+    var placedUid = hitLaneChip(p.x, p.y);
+    if (placedUid) {
+      pointer = { mode: "placed", uid: placedUid, x0: p.x, y0: p.y, x: p.x, y: p.y, moved: false };
+      return;
+    }
+
+    if (lane) {
+      G.selected = null;
+      renderAll();
+    }
+  });
+
+  canvas.addEventListener("pointermove", function (ev) {
+    var p = pointerPos(ev);
+
+    if (pointer) {
+      var dx = p.x - pointer.x0;
+      var dy = p.y - pointer.y0;
+      if (!pointer.moved && Math.sqrt(dx * dx + dy * dy) > 6) pointer.moved = true;
+      pointer.x = p.x;
+      pointer.y = p.y;
+      if (pointer.mode === "dock" && pointer.moved) {
+        G.drag = { uid: pointer.uid, x: p.x, y: p.y };
+        canvas.style.cursor = "grabbing";
+      }
+      draw();
+      return;
+    }
+
+    if (G.screen !== "placing") {
+      canvas.style.cursor = "default";
+      return;
+    }
+    if (hitDock(p.x, p.y)) canvas.style.cursor = "grab";
+    else if (hitLaneChip(p.x, p.y)) canvas.style.cursor = "pointer";
+    else if (hitLane(p.x, p.y)) canvas.style.cursor = G.selected ? "copy" : "default";
+    else canvas.style.cursor = "default";
+  });
+
+  function endPointer(ev) {
+    if (!pointer) return;
+    var p = pointerPos(ev);
+    var ps = pointer;
+    pointer = null;
+
+    if (ps.mode === "dock") {
+      if (ps.moved) {
+        var lane = hitLane(p.x, p.y);
+        G.drag = null;
+        if (lane) tryPlace(ps.uid, lane);
+        else {
+          G.selected = ps.uid;
+          renderAll();
+        }
+      }
+    } else if (ps.mode === "placed") {
+      if (!ps.moved) togglePrediction(ps.uid);
+    } else if (ps.mode === "lane") {
+      if (!ps.moved) tryPlace(G.selected, ps.zone);
+    }
+
+    canvas.style.cursor = "default";
+    draw();
+  }
+
+  canvas.addEventListener("pointerup", endPointer);
+  canvas.addEventListener("pointercancel", function () {
+    pointer = null;
+    G.drag = null;
+    canvas.style.cursor = "default";
+    draw();
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    var tag = (ev.target && ev.target.tagName) || "";
+    if (/INPUT|SELECT|TEXTAREA/.test(tag)) return;
+    if (G.screen !== "placing") return;
+
+    if (ev.key === "1" || ev.key === "2" || ev.key === "3") {
+      if (!G.selected) {
+        toast("Selecciona primero un contenedor del muelle.", "info");
+        return;
+      }
+      tryPlace(G.selected, ZONES[Number(ev.key) - 1]);
+    } else if (ev.key === "Escape") {
+      G.selected = null;
+      renderAll();
+    } else if (ev.key === "Enter") {
+      sail();
+    } else if (ev.key.toLowerCase() === "u") {
+      undoLast();
+    }
+  });
+
+  $("predList").addEventListener("click", function (ev) {
+    var li = ev.target.closest("[data-remove]");
+    if (!li) return;
+    var uid = li.getAttribute("data-remove");
+    G.prediction = G.prediction.filter(function (id) { return id !== uid; });
+    renderAll();
+  });
+
+  $("btnClearPred").addEventListener("click", function () {
+    G.prediction = [];
+    renderAll();
+  });
+
+  /* ================================================================== */
+  /* 9. Flujo del juego                                                  */
+  /* ================================================================== */
+
+  function startWave(index, opts) {
+    opts = opts || {};
+    if (opts.replay) {
+      G.points = G.checkpoint.points;
+      G.lives = G.checkpoint.lives;
+    } else {
+      G.checkpoint = { points: G.points, lives: G.lives };
+    }
+
+    G.waveIndex = index;
+    G.placed = [];
+    G.prediction = [];
+    G.selected = null;
+    G.drag = null;
+    pointer = null;
+    G.result = null;
+    G.actualOrder = [];
+    G.mistakes = [];
+    G.combo = 0;
+    G.acc = 0;
+    G.lastFrame = nowMs();
+    G.fx = {};
+    G.laneFx = {};
+    G.waveStats = { placement: 0, penalty: 0, prediction: 0, bonus: 0, fifo: 0, fifoOk: true };
+    G.engine = newEngine();
+    G.screen = "placing";
+    lastEventCount = -1;
+
+    hideOverlay();
+    if (!opts.silent) {
+      toast("Oleada " + (index + 1) + " · " + WAVES[index].name, "info");
+    }
+    renderAll();
+  }
+
+  function sail() {
+    if (G.screen !== "placing") return;
+    var total = currentWave().jobs.length;
+    if (G.placed.length < total) {
+      toast("Faltan " + (total - G.placed.length) + " contenedores en el muelle.", "info");
+      return;
+    }
+    G.screen = "running";
+    G.acc = 0;
+    G.lastFrame = nowMs();
+    G.selected = null;
+    updateHud();
+    renderAll();
+  }
+
+  function finishWave() {
+    if (G.screen !== "running") return;
+    G.screen = "result";
+
+    var actual = G.engine.processingOrder.slice();
+    var pred = G.prediction.slice();
+    var positionHits = 0;
+    var pairHits = 0;
+    var pairs = 0;
+
+    for (var i = 0; i < actual.length; i++) {
+      if (pred[i] === actual[i]) positionHits++;
+      if (i > 0 && pred[i] && pred[i - 1]) {
+        pairs++;
+        var a = actual.indexOf(pred[i - 1]);
+        var b = actual.indexOf(pred[i]);
+        if (a >= 0 && b === a + 1) pairHits++;
+      }
+    }
+
+    // FIFO intacto: los jobs que van a wait deben procesarse en el orden
+    // en que llegaron al puerto (el orden del guion), no en el orden en
+    // que el jugador los arrastró.
+    var arrivalWait = currentWave().jobs
+      .filter(function (spec) { return BullMQSim.zoneFor(spec) === "wait"; })
+      .map(function (spec) { return String(spec.id); });
+    var actualWait = actual.filter(function (uid) {
+      var spec = specById(uid);
+      return spec && BullMQSim.zoneFor(spec) === "wait";
+    });
+    var fifoOk = actualWait.length === arrivalWait.length &&
+      actualWait.every(function (uid, idx) { return uid === arrivalWait[idx]; });
+    var fifoBonus = fifoOk ? 100 : 0;
+
+    var predPoints = positionHits * 50 + pairHits * 20;
+    var perfect = pred.length === actual.length && positionHits === actual.length;
+    var bonus = perfect && fifoOk ? 200 : 0;
+
+    G.points += predPoints + bonus + fifoBonus;
+    G.waveStats.prediction = predPoints;
+    G.waveStats.bonus = bonus;
+    G.waveStats.fifo = fifoBonus;
+    G.waveStats.fifoOk = fifoOk;
+    G.result = {
+      actual: actual,
+      pred: pred,
+      positionHits: positionHits,
+      pairHits: pairHits,
+      pairs: pairs,
+      predPoints: predPoints,
+      bonus: bonus,
+      fifoOk: fifoOk,
+      fifoBonus: fifoBonus,
+      perfect: perfect
+    };
+    G.actualOrder = actual;
+
+    showResult();
+    renderAll();
+  }
+
+  function jobName(uid) {
+    var job = engineJob(uid);
+    if (job) return job.name;
+    var spec = specById(uid);
+    return spec ? spec.name : uid;
+  }
+
+  function showOverlay(html) {
+    overlay.innerHTML = html;
+    overlay.classList.remove("hidden");
+  }
+
+  function hideOverlay() {
+    overlay.classList.add("hidden");
+    overlay.innerHTML = "";
+  }
+
+  function showBriefing() {
+    G.screen = "briefing";
+    updateHud();
+    showOverlay(
+      '<div class="ov-card">' +
+        '<span class="eyebrow">Juego 01 · El Puerto de Redis</span>' +
+        "<h2>Tres estructuras.<br>Un orden que <em>no</em> esperas.</h2>" +
+        '<p class="ov-lede">BullMQ no guarda los jobs en una sola cola. Usa una LIST y dos ZSET, y <code>moveToActive-11.lua</code> tiene una regla que rompe la intuición:</p>' +
+        '<div class="rule-grid">' +
+          '<div class="rule"><div class="rh"><span class="rk">wait</span><span class="rt">LIST</span></div><p><code>priority: 0</code> y sin delay. Se drena <b>entera</b> antes de mirar el ZSET.</p></div>' +
+          '<div class="rule"><div class="rh"><span class="rk">prioritized</span><span class="rt">ZSET</span></div><p><code>priority &gt; 0</code>. Score <code>priority × 2³² + contador</code>.</p></div>' +
+          '<div class="rule"><div class="rh"><span class="rk">delayed</span><span class="rt">ZSET</span></div><p><code>delay &gt; 0</code>. Score <code>timestamp × 4096 + offset</code>.</p></div>' +
+        "</div>" +
+        '<div class="ov-callout"><b>Cómo se juega:</b> arrastra (o toca) cada contenedor a su estructura. Después haz clic en los contenedores colocados para predecir el orden de procesamiento. Por último, <b>Zarpar</b>. Acierta la zona y la predicción; tienes 3 vidas. Si los jobs de <code>wait</code> conservan su orden de llegada, ganas <b>+100 de integridad FIFO</b>.</div>' +
+        '<button class="primary big" data-act="start">▶ Empezar la marea</button>' +
+      "</div>"
+    );
+  }
+
+  function showResult() {
+    var r = G.result;
+    var wave = currentWave();
+    var isLast = G.waveIndex === WAVES.length - 1;
+    var placement = G.waveStats.placement;
+    var penalty = G.waveStats.penalty;
+    var waveTotal = placement - penalty + r.predPoints + r.bonus + r.fifoBonus;
+
+    var actualLis = r.actual.map(function (uid, i) {
+      return '<li><span class="n">' + (i + 1) + "</span>" +
+        '<span class="mono">#' + esc(uid) + " " + esc(jobName(uid)) + "</span></li>";
+    }).join("");
+
+    var predLis = r.pred.length
+      ? r.pred.map(function (uid, i) {
+          var hit = r.actual[i] === uid;
+          return '<li class="' + (hit ? "ok" : "miss") + '"><span class="n">' + (i + 1) + "</span>" +
+            '<span class="mono">#' + esc(uid) + " " + esc(jobName(uid)) + "</span></li>";
+        }).join("")
+      : '<li class="empty-li">No predijiste el orden.</li>';
+
+    var verdict = r.perfect
+      ? "Marea perfecta"
+      : r.positionHits >= Math.ceil(r.actual.length / 2)
+        ? "Buen ojo de estibador"
+        : "El mar tiene más que enseñarte";
+
+    var missing = r.pred.length < r.actual.length
+      ? '<p class="note">Predijiste ' + r.pred.length + " de " + r.actual.length +
+        " jobs. Las posiciones sin predicción no puntúan.</p>"
+      : "";
+
+    showOverlay(
+      '<div class="ov-card">' +
+        '<span class="eyebrow">Oleada ' + (G.waveIndex + 1) + " · " + esc(wave.name) + "</span>" +
+        "<h2>" + verdict + (r.perfect ? " <em>✓</em>" : "") + "</h2>" +
+        '<div class="ov-stats">' +
+          '<div class="ov-stat"><div class="v">+' + waveTotal + '</div><div class="l">puntos oleada</div></div>' +
+          '<div class="ov-stat"><div class="v">' + r.positionHits + "/" + r.actual.length + '</div><div class="l">posiciones</div></div>' +
+          '<div class="ov-stat"><div class="v">' + r.pairHits + "/" + r.pairs + '</div><div class="l">parejas</div></div>' +
+          '<div class="ov-stat"><div class="v">' + Math.max(0, G.lives) + '</div><div class="l">vidas</div></div>' +
+        "</div>" +
+        '<div class="order-grid">' +
+          '<div class="order-col"><h4>Orden real</h4><ol class="order">' + actualLis + "</ol></div>" +
+          '<div class="order-col"><h4>Tu predicción</h4><ol class="order">' + predLis + "</ol></div>" +
+        "</div>" +
+        missing +
+        '<ul class="breakdown">' +
+          "<li><span>Colocación en zona</span><b>+" + placement + "</b></li>" +
+          "<li><span>Errores de zona</span><b class=\"" + (penalty ? "bad" : "") + "\">" + (penalty ? "−" + penalty : "0") + "</b></li>" +
+          "<li><span>Posiciones acertadas (" + r.positionHits + " × 50)</span><b>+" + (r.positionHits * 50) + "</b></li>" +
+          "<li><span>Parejas consecutivas (" + r.pairHits + " × 20)</span><b>+" + (r.pairHits * 20) + "</b></li>" +
+          "<li><span>FIFO de wait intacto</span><b>" + (r.fifoOk ? "+100" : "—") + "</b></li>" +
+          "<li><span>Marea perfecta</span><b>" + (r.bonus ? "+200" : "—") + "</b></li>" +
+        "</ul>" +
+        '<div class="lesson"><b>Lo que acaba de pasar:</b> ' + esc(wave.lesson) + "</div>" +
+        '<div class="ov-actions">' +
+          '<button data-act="replay">⟲ Rebobinar oleada</button>' +
+          '<button class="primary" data-act="next">' + (isLast ? "Ver resultado final →" : "Siguiente oleada →") + "</button>" +
+        "</div>" +
+      "</div>"
+    );
+  }
+
+  function showGameOver() {
+    G.screen = "gameover";
+    var mistakes = G.mistakes.length
+      ? '<ul>' + G.mistakes.map(function (m) {
+          return "<li><b>" + esc(m.name) + "</b>: lo pusiste en <code>" + esc(m.zone) +
+            "</code>; iba en <code>" + esc(m.expected) + "</code>.</li>";
+        }).join("") + "</ul>"
+      : "";
+
+    showOverlay(
+      '<div class="ov-card">' +
+        '<span class="eyebrow">Oleada ' + (G.waveIndex + 1) + " · sin vidas</span>" +
+        "<h2>El barco zarpó <em>sin ti</em></h2>" +
+        '<p class="ov-lede">Tres errores de clasificación y el puerto te dejó en tierra. La buena noticia: el simulador es determinista. Rebobina la oleada y prueba otro reparto.</p>' +
+        '<div class="lesson"><b>Repasa la regla de entrada:</b>' + mistakes +
+          "<ul><li><code>delay &gt; 0</code> → delayed.</li><li><code>priority &gt; 0</code> → prioritized.</li><li>El resto → wait (LIST).</li></ul>" +
+        "</div>" +
+        '<div class="ov-actions"><button class="primary" data-act="replay">⟲ Rebobinar oleada</button></div>' +
+      "</div>"
+    );
+    updateHud();
+  }
+
+  function showVictory() {
+    G.screen = "victory";
+    var rank = G.points >= 3000
+      ? "Capitán del Puerto"
+      : G.points >= 2200
+        ? "Estibador experto"
+        : G.points >= 1400
+          ? "Aprendiz prometedor"
+          : "Polizón con potencial";
+
+    showOverlay(
+      '<div class="ov-card">' +
+        '<span class="eyebrow">Puerto completado · 3 oleadas</span>' +
+        "<h2>" + rank + "</h2>" +
+        '<p class="ov-lede">Has clasificado ' + WAVES.reduce(function (n, w) { return n + w.jobs.length; }, 0) +
+          " contenedores y sobrevivido a dos ZSET. Este es el modelo mental que te llevas:</p>" +
+        '<div class="ov-stats">' +
+          '<div class="ov-stat"><div class="v">' + Math.round(G.points) + '</div><div class="l">puntos</div></div>' +
+          '<div class="ov-stat"><div class="v">×' + G.bestCombo + '</div><div class="l">mejor racha</div></div>' +
+          '<div class="ov-stat"><div class="v">' + Math.max(0, G.lives) + '</div><div class="l">vidas</div></div>' +
+          '<div class="ov-stat"><div class="v">3/3</div><div class="l">oleadas</div></div>' +
+        "</div>" +
+        '<div class="lesson"><b>Las tres reglas del puerto:</b><ul>' +
+          "<li><code>priority: 0</code> no es máxima prioridad: es <b>sin prioridad</b> y va a la LIST <code>wait</code>.</li>" +
+          "<li><code>wait</code> se drena <b>entera</b> antes de consultar el ZSET <code>prioritized</code>. La prioridad solo ordena dentro del ZSET.</li>" +
+          "<li><code>delayed</code> es un ZSET con timestamp. Al promover, si el job tiene priority recibe un score nuevo.</li>" +
+        "</ul></div>" +
+        '<div class="ov-actions">' +
+          '<button class="primary" data-act="restart">Jugar de nuevo</button>' +
+          '<a class="ghost-link" href="bullmq-juegos-propuesta.html">Volver a la propuesta</a>' +
+        "</div>" +
+      "</div>"
+    );
+    updateHud();
+  }
+
+  overlay.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("[data-act]");
+    if (!btn) return;
+    var act = btn.getAttribute("data-act");
+
+    if (act === "start") {
+      G.screen = "placing";
+      hideOverlay();
+      renderAll();
+    } else if (act === "replay") {
+      startWave(G.waveIndex, { replay: true });
+    } else if (act === "next") {
+      if (G.waveIndex < WAVES.length - 1) {
+        startWave(G.waveIndex + 1);
+      } else {
+        showVictory();
+      }
+    } else if (act === "restart") {
+      G.points = 0;
+      G.lives = 3;
+      G.combo = 0;
+      G.bestCombo = 0;
+      G.checkpoint = { points: 0, lives: 3 };
+      startWave(0, { silent: true });
+      showBriefing();
+    }
+  });
+
+  $("btnSail").addEventListener("click", sail);
+  $("btnUndo").addEventListener("click", undoLast);
+  $("btnReplay").addEventListener("click", function () {
+    if (G.screen === "briefing" || G.screen === "running") return;
+    startWave(G.waveIndex, { replay: true });
+  });
+  $("speed").addEventListener("change", function () {
+    G.speed = parseInt(this.value, 10) || 4;
+  });
+
+  /* ================================================================== */
+  /* 10. Bucle principal y arranque                                      */
+  /* ================================================================== */
+
+  function fitCanvas() {
+    var wrap = canvas.parentElement;
+    var cssW = canvas.clientWidth || wrap.clientWidth;
+    if (!cssW) return;
+    var cssH = cssW * (H / W);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.style.height = cssH + "px";
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    draw();
+  }
+
+  function loop(now) {
+    requestAnimationFrame(loop);
+    var dt = Math.min(64, now - (G.lastFrame || now));
+    G.lastFrame = now;
+
+    if (G.screen === "running") {
+      G.acc += dt;
+      var interval = 1000 / (10 * G.speed);
+      var steps = 0;
+      while (G.acc >= interval && G.screen === "running" && steps < 40) {
+        G.acc -= interval;
+        G.engine.step();
+        steps++;
+        if (G.engine.isIdle()) {
+          finishWave();
+          break;
+        }
+      }
+      updateHud();
+      renderScores();
+      renderEvents();
+    }
+
+    draw(now);
+  }
+
+  // estado inicial
+  startWave(0, { silent: true });
+  fitCanvas();
+  window.addEventListener("resize", fitCanvas);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { draw(); });
+  }
+
+  showBriefing();
+  requestAnimationFrame(loop);
+
+  // Exposición para pruebas manuales y para el arnés de Node
+  window.__puerto = {
+    state: G,
+    waves: WAVES,
+    startWave: startWave,
+    tryPlace: tryPlace,
+    togglePrediction: togglePrediction,
+    undoLast: undoLast,
+    sail: sail,
+    finishWave: finishWave,
+    engine: function () { return G.engine; }
+  };
+})();
+</script>
+</body>
+</html>
