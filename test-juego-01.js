@@ -225,6 +225,44 @@ console.log("\n[8] Casos límite del motor");
   });
 }
 
+/* ------------------------------------------------------------------ */
+console.log("\n[9] Banco de preguntas del aula (content/quiz-juego-01.js)");
+/* ------------------------------------------------------------------ */
+
+{
+  const QUIZ = require("./content/quiz-juego-01.js");
+  const QUIZ_POINTS = 50;
+
+  check("hay un paquete de preguntas por oleada", () => {
+    assert.strictEqual(QUIZ.length, WAVES.length);
+  });
+
+  QUIZ.forEach((pack, waveIndex) => {
+    check(`oleada ${waveIndex + 1} · el paquete tiene título y preguntas`, () => {
+      assert.ok(typeof pack.title === "string" && pack.title.trim().length > 0);
+      assert.ok(Array.isArray(pack.questions) && pack.questions.length >= 2);
+    });
+
+    pack.questions.forEach((q, qi) => {
+      check(`oleada ${waveIndex + 1} · pregunta ${qi + 1} bien formada`, () => {
+        assert.ok(typeof q.prompt === "string" && q.prompt.trim().length > 0);
+        assert.ok(Array.isArray(q.options) && q.options.length >= 2);
+        assert.ok(q.options.every((opt) => typeof opt === "string" && opt.trim().length > 0));
+        assert.ok(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length);
+        assert.ok(typeof q.why === "string" && q.why.trim().length > 0);
+      });
+    });
+
+    check(`oleada ${waveIndex + 1} · las respuestas correctas no caen siempre en la opción 0`, () => {
+      assert.ok(pack.questions.some((q) => q.answer !== 0));
+    });
+  });
+
+  check("cada paquete declara cuántos puntos vale el reto", () => {
+    assert.strictEqual(QUIZ_POINTS, 50);
+  });
+}
+
 console.log("\n----------------------------------------");
 console.log("  " + passed + " pasaron, " + failed + " fallaron");
 console.log("----------------------------------------");
