@@ -9,6 +9,7 @@
  *   - niveles: Inversión (diales) reproduce el bug y su arreglo
  *   - niveles: El cero traicionero hace salir primero al priority 0
  *   - HTML: ids, scripts, tema claro/oscuro y glosario citado
+ *   - visual: mapa de componentes, cuatro gráficas, pasos add→completed y checklist
  *
  * Ejecutar: node juego-1-api/test-juego-1-api.js
  */
@@ -458,6 +459,84 @@ console.log("\n[8] HTML: glosario y didáctica citada");
 
   check("el HTML expone el juego para depuración", () => {
     assert.ok(html.includes("window.DespachoGame"));
+  });
+}
+
+console.log("\n[9] Capa visual: mapa, gráficas, pasos y checklist");
+
+/* ------------------------------------------------------------------ */
+
+{
+  const html = fs.readFileSync(HTML_PATH, "utf8");
+
+  const visualIds = [
+    "archMap", "archNow",
+    "arch-producer", "arch-router", "arch-wait", "arch-prioritized",
+    "arch-move", "arch-worker", "arch-completed", "arch-failed", "arch-events",
+    "arch-e-producer-router", "arch-e-router-wait", "arch-e-router-prio",
+    "arch-e-wait-move", "arch-e-prio-move", "arch-e-move-worker",
+    "arch-e-worker-completed", "arch-e-worker-failed", "arch-e-worker-events",
+    "chartPriority", "chartScore", "chartGantt", "chartDepth",
+    "stepPanel", "stepNow", "step-add", "step-zone", "step-move",
+    "step-active", "step-complete",
+    "observeList", "observeBadge"
+  ];
+
+  visualIds.forEach((id) => {
+    check(`el HTML incluye #${id}`, () => {
+      assert.ok(html.includes('id="' + id + '"'), "falta id=" + id);
+    });
+  });
+
+  check("el mapa enlaza nodos con el glosario", () => {
+    ["wait", "prio", "fifo", "events"].forEach((term) => {
+      assert.ok(html.includes('data-term="' + term + '"'), "falta data-term=" + term);
+    });
+  });
+
+  check("la capa visual usa el motor vendorizado BullMQSim", () => {
+    assert.ok(html.includes("var Sim = window.BullMQSim;"));
+    assert.ok(!html.includes("window.DispatchSim"), "queda la referencia al motor recortado");
+  });
+
+  check("la traza usa engine.tick (no engine.ticks)", () => {
+    assert.ok(html.includes("engine ? engine.tick : 0"));
+    assert.ok(!html.includes("engine.ticks"));
+  });
+
+  check("cada nivel trae su checklist «¿Qué observar?»", () => {
+    LEVELS.forEach((level) => {
+      assert.ok(Array.isArray(level.observe) && level.observe.length >= 3, "checklist incompleta en " + level.id);
+      level.observe.forEach((item) => assert.ok(item.length > 10, "ítem demasiado corto en " + level.id));
+    });
+  });
+
+  check("el HTML renderiza la checklist y el estado de pasos", () => {
+    assert.ok(html.includes("function renderObserve()"));
+    assert.ok(html.includes("function renderSteps()"));
+    assert.ok(html.includes("function drawCharts()"));
+    assert.ok(html.includes("function renderArchMap()"));
+    assert.ok(html.includes("function flowForEvent(e)"));
+  });
+
+  check("las cuatro gráficas se dibujan con la paleta del tema", () => {
+    ["drawPriorityChart", "drawScoreChart", "drawGanttChart", "drawDepthChart"].forEach((fn) => {
+      assert.ok(html.includes("function " + fn + "()"), "falta " + fn);
+    });
+    assert.ok(html.includes("drawCharts()"), "drawCharts no está cableado");
+  });
+
+  check("el score se conserva tras completar los jobs", () => {
+    const engine = runLevel(LEVELS[0]);
+    engine.processingOrder.forEach((id) => {
+      assert.ok(engine.jobs[id].score != null, "se perdió el score de " + id);
+    });
+    const seq = engine.jobs["marketing-newsletter"].score % Sim.PRIORITY_MULT;
+    assert.strictEqual(seq, 3);
+  });
+
+  check("el juego expone el mapa y las gráficas para depuración", () => {
+    assert.ok(/window\.DespachoGame\s*=\s*\{[\s\S]*flowForEvent[\s\S]*drawCharts[\s\S]*renderArchMap/.test(html));
   });
 }
 

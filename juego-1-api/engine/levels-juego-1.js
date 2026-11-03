@@ -65,6 +65,12 @@
         order: ["critical-verification", "transactional-receipt", "marketing-newsletter"]
       },
       lesson: "El bug no era el motor: era el sentido. Con critical: 10 y marketing: 1, el newsletter (1) salía antes que la verificación (10). La semántica real ordena por el MENOR número: verificación 1, recibo 5, newsletter 10.",
+      observe: [
+        "El número MENOR gana: 1 se procesa antes que 5, y 5 antes que 10.",
+        "Con el bug inicial (crítico 10, marketing 1) el newsletter sale primero.",
+        "El recibo está fijado en 5: solo puedes mover verificación y newsletter.",
+        "La gráfica de Gantt confirma el mismo orden que la traza de eventos."
+      ],
       source: {
         label: "api-movies README → Async jobs (BullMQ)",
         url: "README.md"
@@ -122,6 +128,12 @@
         order: ["system-note", "verification", "receipt"]
       },
       lesson: "system-note tiene priority 0, así que entró en wait. moveToActive hace RPOPLPUSH sobre wait antes de tocar el ZSET: sale primero aunque su número parezca el más bajo. Después, dentro de prioritized, el menor score gana: 1 (verificación) antes que 5 (recibo).",
+      observe: [
+        "priority 0 no significa «el más lento»: significa sin prioridad explícita.",
+        "El job con priority 0 entra en la LIST wait, no en el ZSET prioritized.",
+        "moveToActive drena wait ENTERA antes de consultar prioritized.",
+        "Por eso el aviso de sistema sale primero; después gana el menor score del ZSET."
+      ],
       source: {
         label: "BullMQ moveToActive-11.lua",
         url: "https://github.com/taskforcesh/bullmq/blob/master/src/commands/moveToActive-11.lua"
