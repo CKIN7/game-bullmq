@@ -1,0 +1,41 @@
+/**
+ * Espejo cargable en navegador de retry-config.json.
+ * El test compara ambos objetos para evitar que se separen.
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) {
+    module.exports = factory();
+  } else {
+    root.RetryConfig = factory();
+  }
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+  return {
+    source: {
+      gameDoc: "2026-11-02-juegos-aprendizaje-bullmq-repo-api-movies.md",
+      section: "Juego 2 — Bala y Contra (bullet hell)",
+      code: "config/bullmq.ts",
+      bullmqDocs: "https://docs.bullmq.io/guide/retrying-failing-jobs"
+    },
+    jobOptions: {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 2000
+      },
+      removeOnFail: 50,
+      removeOnComplete: 100
+    },
+    rules: {
+      backoff: "delay × 2^(intento-1): 2 s, 4 s, 8 s",
+      terminal: "con attempts=3, el tercer fallo va directo a failed; el hueco de 8 s no llega a usarse",
+      failed: "failed es la DLQ de BullMQ: no es una estructura aparte, es el conjunto de jobs agotados",
+      removeOnFail: "se conservan los últimos 50 jobs en failed",
+      stalled: "si el worker muere, el stall check devuelve el job a la cola sin consumir un intento"
+    },
+    errors: {
+      fragile: "500 · timeout temporal de Resend",
+      poisoned: "400 · template inválido (permanente)"
+    }
+  };
+});

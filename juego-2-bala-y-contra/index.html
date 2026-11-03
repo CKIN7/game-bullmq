@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juego 2 — Bala y Contra · BullMQ</title>
+<style>
+  :root{
+    --bg:#080d18; --bg2:#0b1322; --panel:#0d1728; --panel2:#101d33;
+    --line:#1e3050; --line-soft:#172642; --ink:#e9eefc; --ink2:#c2cee6;
+    --muted:#8ea2c6; --faint:#5d7196; --accent:#5eead4; --accent2:#22d3ee;
+    --warn:#fbbf24; --danger:#fb7185; --ok:#34d399; --violet:#a78bfa;
+    --card:#0f1b30; --card-line:#22375c; --focus:#102a3d;
+    --sh:0 18px 50px rgba(0,0,0,.45); --sh2:0 3px 14px rgba(0,0,0,.35);
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+    --sans:"Outfit",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  }
+  [data-theme="light"]{
+    --bg:#eef4f7; --bg2:#e3edf3; --panel:#ffffff; --panel2:#f3f8fb;
+    --line:#cfdde8; --line-soft:#e0eaf2; --ink:#0e1b2a; --ink2:#26384d;
+    --muted:#5d7290; --faint:#8ba0b8; --accent:#0f766e; --accent2:#0e7490;
+    --warn:#a16207; --danger:#be123c; --ok:#047857; --violet:#6d28d9;
+    --card:#ffffff; --card-line:#d6e2ec; --focus:#e6f4f1;
+    --sh:0 18px 50px rgba(20,50,70,.14); --sh2:0 3px 14px rgba(20,50,70,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    background:
+      radial-gradient(1200px 620px at 82% -10%, color-mix(in srgb, var(--accent2) 14%, transparent), transparent 60%),
+      radial-gradient(900px 520px at 8% 0%, color-mix(in srgb, var(--violet) 12%, transparent), transparent 62%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased;
+  }
+  .shell{max-width:1380px;margin:0 auto;padding:22px 22px 40px}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
+  .brand h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4.2vw,48px);line-height:.98;margin:6px 0 0;letter-spacing:-.02em}
+  .brand h1 em{font-style:italic;color:var(--accent)}
+  .brand p{margin:8px 0 0;max-width:78ch;color:var(--muted);font-size:13px;line-height:1.55}
+  .brand code{font-family:var(--mono);font-size:.92em;color:var(--ink2);background:var(--panel2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .stat{min-width:74px;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);box-shadow:var(--sh2)}
+  .stat .v{font-family:var(--mono);font-size:18px;font-weight:600;line-height:1.1}
+  .stat .l{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+  .stat.hot{border-color:var(--warn)}
+  .stat.hot .v{color:var(--warn)}
+
+  .scenario-bar{display:flex;gap:8px;margin:12px 0 14px;flex-wrap:wrap}
+  .scn{border:1px solid var(--line);background:var(--panel);color:var(--ink2);border-radius:999px;padding:8px 14px;font:600 11.5px var(--sans);cursor:pointer;transition:.16s}
+  .scn:hover{border-color:var(--accent);color:var(--ink)}
+  .scn.active{background:var(--accent);border-color:var(--accent);color:#04120f}
+  .scn:disabled{opacity:.5;cursor:not-allowed}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:16px;align-items:start}
+  .stage{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--sh)}
+  #board{display:block;width:100%;height:auto;border-radius:12px;background:#080d18;border:1px solid var(--line-soft)}
+  .stage-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px}
+  .controls{display:flex;gap:7px;flex-wrap:wrap}
+  .controls button,.modal-actions button{border:1px solid var(--line);background:var(--panel2);color:var(--ink2);border-radius:9px;padding:8px 12px;font:600 11.5px var(--sans);cursor:pointer;transition:.16s}
+  .controls button:hover:not(:disabled),.modal-actions button:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
+  .controls button.primary,.modal-actions button.primary{background:var(--accent);border-color:var(--accent);color:#04120f}
+  .controls button:disabled,.modal-actions button:disabled{opacity:.45;cursor:not-allowed}
+  .toast{min-height:18px;font-size:11.5px;color:var(--accent);font-family:var(--mono)}
+  .failed-tray{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 11px;border:1px solid var(--line-soft);border-radius:11px;background:var(--panel2);min-height:42px}
+  .ft-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--danger);white-space:nowrap}
+  .ft-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .ft-chip{font-family:var(--mono);font-size:9.5px;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:3px 7px}
+  .ft-empty{font-size:11px;color:var(--faint)}
+
+  .side{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:var(--sh2)}
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .panel-head h3{margin:0;font-size:12.5px;font-weight:600}
+  .badge{font-family:var(--mono);font-size:9px;letter-spacing:.05em;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
+  .mission h2{font-family:var(--serif);font-weight:400;font-size:27px;margin:8px 0 8px;letter-spacing:-.01em}
+  .brief{font-size:12px;line-height:1.55;color:var(--ink2)}
+  .brief p{margin:0 0 7px}
+  .goal{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line)}
+  .goal .g{font-family:var(--mono);font-size:10.5px;color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:3px 7px;background:var(--card)}
+  .goal .note{font-size:9.5px;color:var(--muted)}
+  .ladder{display:flex;flex-direction:column;gap:6px}
+  .rung{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line-soft);border-radius:8px;padding:7px 9px;background:var(--panel2);transition:.16s}
+  .rung .rl{font-size:11px;color:var(--ink2)}
+  .rung .rv{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .rung.used{border-color:var(--accent);background:var(--focus)}
+  .rung.used .rv{color:var(--accent)}
+  .rung.dead{opacity:.55}
+  .rung.dead .rv{color:var(--warn)}
+  .observe{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+  .observe li{display:flex;gap:7px;align-items:flex-start;font-size:11px;line-height:1.4;color:var(--ink2);cursor:pointer}
+  .observe li .ob{width:14px;height:14px;border:1px solid var(--line);border-radius:4px;background:var(--card);flex:none;margin-top:1px;display:grid;place-items:center;font-size:9px;color:transparent}
+  .observe li.done .ob{background:var(--accent);border-color:var(--accent);color:#04120f}
+  .observe li.done .ot{color:var(--muted);text-decoration:line-through}
+  .event-log{max-height:196px;overflow:auto;font-family:var(--mono);font-size:9.5px;line-height:1.5;display:flex;flex-direction:column;gap:2px}
+  .ev{display:grid;grid-template-columns:34px 1fr;gap:6px;padding:2px 4px;border-radius:4px}
+  .ev .t{color:var(--faint)}
+  .ev-failed,.ev-dead{color:var(--danger)}
+  .ev-completed{color:var(--ok)}
+  .ev-stalled,.ev-backoff{color:var(--warn)}
+  .ev-retry{color:var(--accent)}
+  .ev-empty{color:var(--faint);font-family:var(--sans);font-size:11px}
+
+  .overlay{position:fixed;inset:0;background:rgba(3,8,16,.72);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:50}
+  .overlay.hidden,.modal.hidden{display:none !important}
+  .ov-card,.modal-card{width:min(560px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--sh)}
+  .ov-card h2,.modal-card h2{font-family:var(--serif);font-weight:400;font-size:30px;margin:8px 0 8px}
+  .ov-card h2 em,.modal-card h2 em{font-style:italic;color:var(--accent)}
+  .ov-lede{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0 0 12px}
+  .score-line{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}
+  .score-line div{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .score-line b{display:block;font-family:var(--sans);font-size:22px;color:var(--ink);margin-top:2px}
+  .ov-actions,.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .modal{position:fixed;inset:0;background:rgba(3,8,16,.78);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:60}
+  .modal .err{font-family:var(--mono);font-size:12px;color:var(--danger);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:8px 0}
+  .modal .meta{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.55}
+  .modal .modal-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 0}
+  .help-body{font-size:12px;line-height:1.6;color:var(--ink2)}
+  .help-body b{color:var(--ink)}
+  .help-body code{font-family:var(--mono);font-size:.92em;background:var(--panel2);border:1px solid var(--line-soft);border-radius:4px;padding:1px 4px}
+  .help-body ul{margin:8px 0;padding-left:18px}
+  @media (max-width:1080px){.layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr;align-items:start}.log-panel{grid-column:1/-1}}
+  @media (max-width:720px){.side{grid-template-columns:1fr}.shell{padding:14px}.hud .stat{min-width:64px;padding:7px 9px}.stat .v{font-size:15px}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="eyebrow">Juego 2 · BullMQ · api-movies</span>
+      <h1>Bala y <em>Contra</em></h1>
+      <p>Los jobs entran como proyectiles hacia tu nave-worker. Si fallan, decides: <b>reintentar</b> con backoff exponencial o mandarlos a <code>failed</code>. Aprende por qué un 400 no se reintenta y un stall no gasta intento.</p>
+    </div>
+    <div class="hud">
+      <div class="stat"><div class="v" id="hudScore">0</div><div class="l">puntos</div></div>
+      <div class="stat" id="energyStat"><div class="v" id="hudEnergy">4</div><div class="l">energía</div></div>
+      <div class="stat"><div class="v" id="hudCompleted">0</div><div class="l">completed</div></div>
+      <div class="stat"><div class="v" id="hudFailed">0</div><div class="l">failed</div></div>
+      <div class="stat"><div class="v" id="hudAttempts">0</div><div class="l">attempts</div></div>
+      <div class="stat"><div class="v" id="hudTime">0.0s</div><div class="l">reloj</div></div>
+    </div>
+  </header>
+
+  <div class="scenario-bar" role="tablist" id="scenarioTabs" aria-label="Escenarios">
+    <button class="scn active" data-scenario="0">1 · Primer contacto</button>
+    <button class="scn" data-scenario="1">2 · Stall check</button>
+  </div>
+
+  <main class="layout">
+    <section class="stage" aria-label="Tablero del juego">
+      <canvas id="board" width="960" height="560" aria-label="Nave worker, jobs entrantes y cementerio de failed"></canvas>
+      <div class="stage-foot">
+        <div class="controls">
+          <button class="primary" id="btnStart">Iniciar</button>
+          <button id="btnPause" disabled>Pausa</button>
+          <button id="btnReset">Reiniciar</button>
+          <button id="btnTheme" aria-pressed="false">Tema</button>
+          <button id="btnHelp">Cómo se juega</button>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+      <div class="failed-tray">
+        <span class="ft-label">failed · DLQ</span>
+        <div class="ft-chips" id="failedTray"><span class="ft-empty">vacío</span></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="panel mission">
+        <span class="badge" id="scenarioKicker"></span>
+        <h2 id="scenarioTitle"></h2>
+        <div class="brief" id="scenarioBrief"></div>
+        <div class="goal" id="scenarioGoal"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3>Escalera de backoff</h3><span class="badge">attempts 3</span></div>
+        <div class="ladder" id="ladder"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3>¿Qué observar?</h3><span class="badge" id="observeBadge">0 / 4</span></div>
+        <ul class="observe" id="observeList"></ul>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="panel-head"><h3>Traza del worker</h3><span class="badge">events</span></div>
+        <div class="event-log" id="eventLog"></div>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<div class="overlay hidden" id="overlay"></div>
+
+<div class="modal hidden" id="decisionModal" role="dialog" aria-modal="true" aria-labelledby="decisionTitle">
+  <div class="modal-card">
+    <span class="eyebrow" id="decisionMeta">decisión pendiente</span>
+    <h2 id="decisionTitle">Falló un job</h2>
+    <p class="err" id="decisionError"></p>
+    <p class="meta" id="decisionStats"></p>
+    <p class="modal-note">Reintentar programa el backoff exponencial y gasta 1 de energía. Mandar a <code>failed</code> libera la cola: es la DLQ de BullMQ.</p>
+    <div class="modal-actions">
+      <button class="primary" id="btnRetry" data-action="retry">Reintentar</button>
+      <button id="btnAbandon" data-action="abandon">Mandar a failed</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="modal-card">
+    <span class="eyebrow">Cómo se juega</span>
+    <h2 id="helpTitle">Leer el error y elegir</h2>
+    <div class="help-body">
+      <p>Cada job que llega a la nave consume un intento. Si falla, el motor te muestra el error real y dos salidas:</p>
+      <ul>
+        <li><b>Reintentar</b>: gasta 1 de energía y espera el backoff exponencial (<code>2 s</code>, <code>4 s</code>, <code>8 s</code>).</li>
+        <li><b>Mandar a failed</b>: el job entra en el conjunto <code>failed</code>, que es la DLQ de BullMQ. No hay una cola aparte.</li>
+      </ul>
+      <p><b>Pista:</b> un <code>500</code>, <code>429</code> o <code>503</code> puede ser temporal. Un <code>400</code> es permanente: reintentarlo quema energía sin cambiar el resultado.</p>
+      <p>Con <code>attempts: 3</code>, el tercer fallo va directo a <code>failed</code>. El hueco de 8 s solo aparecería con un cuarto intento.</p>
+      <p>Si el worker muere, el <b>stall check</b> devuelve el job a la cola sin consumir un intento ni energía.</p>
+    </div>
+    <div class="modal-actions"><button id="btnHelpClose">Entendido</button></div>
+  </div>
+</div>
+
+<script src="config/retry-config.js"></script>
+<script src="engine/retry-sim.js"></script>
+<script src="engine/scenarios-juego-2.js"></script>
+<script>
+  "use strict";
+
+  /* ================================================================== */
+  /* 1. Utilidades, paleta y tema                                        */
+  /* ================================================================== */
+
+  function $(id) { return document.getElementById(id); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function nowMs() {
+    return typeof performance !== "undefined" ? performance.now() : Date.now();
+  }
+  function pad2(n) { return n < 10 ? "0" + n : String(n); }
+
+  var THEMES = {
+    dark: {
+      bg: "#080d18", bg2: "#0c1526", grid: "#14213a", ink: "#e9eefc",
+      ink2: "#c2cee6", muted: "#8ea2c6", faint: "#5d7196",
+      accent: "#5eead4", accent2: "#22d3ee", warn: "#fbbf24",
+      danger: "#fb7185", ok: "#34d399", violet: "#a78bfa",
+      card: "#0f1b30", cardLine: "#22375c", ship: "#7dd3fc",
+      shipDark: "#0e2b3a", glow: "#22d3ee", stone: "#334155",
+      trail: "#1b2c49"
+    },
+    light: {
+      bg: "#eef5f8", bg2: "#e2edf4", grid: "#cbdce8", ink: "#0e1b2a",
+      ink2: "#26384d", muted: "#5d7290", faint: "#8ba0b8",
+      accent: "#0f766e", accent2: "#0e7490", warn: "#a16207",
+      danger: "#be123c", ok: "#047857", violet: "#6d28d9",
+      card: "#ffffff", cardLine: "#c9d9e6", ship: "#0369a1",
+      shipDark: "#dbeafe", glow: "#0e7490", stone: "#94a3b8",
+      trail: "#b8cde0"
+    }
+  };
+  var PAL = THEMES.dark;
+
+  function initialTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem("bala-theme"); } catch (e) { saved = null; }
+    if (saved === "light" || saved === "dark") return saved;
+    try {
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } catch (e) {
+      return "dark";
+    }
+  }
+
+  function setTheme(t, opts) {
+    PAL = THEMES[t] || THEMES.dark;
+    document.documentElement.setAttribute("data-theme", t);
+    try { localStorage.setItem("bala-theme", t); } catch (e) { /* modo privado */ }
+    var btn = $("btnTheme");
+    if (btn) btn.setAttribute("aria-pressed", t === "dark" ? "true" : "false");
+    if (!opts || !opts.silent) draw(nowMs());
+  }
+
+  /* ================================================================== */
+  /* 2. Estado y constantes                                              */
+  /* ================================================================== */
+
+  var CFG = window.RetryConfig;
+  var Sim = window.RetrySim;
+  var SCENARIOS = window.RetryScenarios;
+
+  var W = 960;
+  var H = 560;
+  var SHIP_X = 78;
+  var SHIP_W = 126;
+  var SHIP_Y = 214;
+  var SHIP_H = 132;
+  var DOCK_X = SHIP_X + SHIP_W + 34;
+  var SPAWN_X = W + 60;
+  var LANES = [128, 274, 420];
+  var FAILED_Y = H - 58;
+  var SPEED = 92; // px/s
+
+  var G = {
+    scenarioIndex: 0,
+    scenario: SCENARIOS[0],
+    sim: null,
+    preview: null,
+    entities: {},
+    phase: "setup",          // setup | running | done
+    paused: false,
+    raf: null,
+    last: 0,
+    stalledOnce: false,
+    observed: {},
+    decision: null,
+    toastTimer: null,
+    hits: []
+  };
+
+  var ctx = $("board").getContext("2d");
+
+  /* Estrellas deterministas: LCG, sin Math.random. */
+  var STARS = (function () {
+    var seed = 0x5eed1234;
+    var out = [];
+    function next() {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed;
+    }
+    for (var i = 0; i < 130; i++) {
+      var x = next() % W;
+      var y = next() % H;
+      out.push({ x: x, y: y, r: 0.6 + (next() % 12) / 10, p: (next() % 100) / 100 });
+    }
+    return out;
+  })();
+
+  function rr(x, y, w, h, r) {
+    r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function fit(text, maxW) {
+    var t = String(text);
+    if (ctx.measureText(t).width <= maxW) return t;
+    while (t.length > 2 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1);
+    return t + "…";
+  }
+
+  /* ================================================================== */
+  /* 3. Dibujo del tablero                                               */
+  /* ================================================================== */
+
+  function laneY(e) { return LANES[e.lane % LANES.length]; }
+
+  function drawSpace(ts) {
+    var g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, PAL.bg);
+    g.addColorStop(0.55, PAL.bg2);
+    g.addColorStop(1, PAL.bg);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    for (var i = 0; i < STARS.length; i++) {
+      var s = STARS[i];
+      var a = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(ts / 900 + s.p * 6.28));
+      ctx.globalAlpha = a;
+      ctx.fillStyle = PAL.ink;
+      ctx.fillRect(s.x, s.y, s.r, s.r);
+    }
+    ctx.globalAlpha = 1;
+
+    // Guías de carril
+    ctx.strokeStyle = PAL.grid;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 9]);
+    for (var l = 0; l < LANES.length; l++) {
+      ctx.beginPath();
+      ctx.moveTo(DOCK_X, LANES[l]);
+      ctx.lineTo(W - 20, LANES[l]);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Título interno
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = PAL.muted;
+    ctx.font = "600 10px 'JetBrains Mono', monospace";
+    ctx.fillText("BALA Y CONTRA · retry & backoff", 22, 30);
+    ctx.fillStyle = PAL.faint;
+    ctx.font = "10px 'Outfit', sans-serif";
+    ctx.fillText(G.scenario ? G.scenario.kicker : "", 22, 46);
+  }
+
+  function drawShip(ts) {
+    var sim = activeSim();
+    var energy = sim ? sim.energy : (G.scenario ? G.scenario.energy : 0);
+
+    // Halo del motor
+    var cx = SHIP_X + 8;
+    var cy = SHIP_Y + SHIP_H / 2;
+    var grad = ctx.createRadialGradient(cx, cy, 4, cx, cy, 94);
+    grad.addColorStop(0, PAL.glow);
+    grad.addColorStop(1, PAL.bg);
+    ctx.save();
+    ctx.globalAlpha = 0.18 + 0.05 * Math.sin(ts / 420);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 94, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Cuerpo
+    rr(SHIP_X, SHIP_Y, SHIP_W, SHIP_H, 18);
+    ctx.fillStyle = PAL.shipDark;
+    ctx.fill();
+    ctx.strokeStyle = PAL.ship;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    // Cañón
+    rr(SHIP_X + SHIP_W - 2, cy - 7, 36, 14, 6);
+    ctx.fillStyle = PAL.ship;
+    ctx.fill();
+    rr(SHIP_X + SHIP_W + 28, cy - 3, 10, 6, 3);
+    ctx.fillStyle = PAL.accent;
+    ctx.fill();
+
+    // Escotilla / ojo
+    ctx.beginPath();
+    ctx.arc(SHIP_X + 42, cy, 17, 0, Math.PI * 2);
+    ctx.fillStyle = PAL.bg2;
+    ctx.fill();
+    ctx.strokeStyle = PAL.accent;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(SHIP_X + 42, cy, 6 + 2 * Math.sin(ts / 360), 0, Math.PI * 2);
+    ctx.fillStyle = PAL.accent2;
+    ctx.fill();
+
+    // Texto
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = PAL.ink;
+    ctx.font = "600 11px 'JetBrains Mono', monospace";
+    ctx.fillText("WORKER", SHIP_X + 70, SHIP_Y + 30);
+    ctx.fillStyle = PAL.muted;
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.fillText("concurrency 1", SHIP_X + 70, SHIP_Y + 45);
+    ctx.fillText("attempts " + (sim ? sim.attempts : CFG.jobOptions.attempts), SHIP_X + 70, SHIP_Y + 59);
+
+    // Energía
+    ctx.fillStyle = PAL.muted;
+    ctx.font = "600 9px 'JetBrains Mono', monospace";
+    ctx.fillText("ENERGÍA", SHIP_X + 70, SHIP_Y + 82);
+    var maxE = G.scenario ? G.scenario.energy : 6;
+    for (var i = 0; i < maxE; i++) {
+      var on = i < energy;
+      rr(SHIP_X + 70 + i * 13, SHIP_Y + 89, 9, 12, 3);
+      ctx.fillStyle = on ? (energy <= 1 ? PAL.warn : PAL.accent) : PAL.cardLine;
+      ctx.fill();
+    }
+    ctx.fillStyle = PAL.ink2;
+    ctx.font = "600 11px 'JetBrains Mono', monospace";
+    ctx.fillText(energy + " / " + maxE, SHIP_X + 70, SHIP_Y + 118);
+  }
+
+  function drawAttemptPips(x, y, made, total) {
+    for (var i = 0; i < total; i++) {
+      ctx.beginPath();
+      ctx.arc(x + i * 9, y, 2.4, 0, Math.PI * 2);
+      ctx.fillStyle = i < made ? PAL.warn : PAL.cardLine;
+      ctx.fill();
+    }
+  }
+
+  function codeOf(job) { return job ? String(job.error || "?").split("·")[0].trim() : "?"; }
+
+  function drawIdle(e, index) {
+    var sim = G.preview;
+    var job = sim ? sim.jobs[e.id] : null;
+    if (!job) return;
+    var x = W - 148;
+    var y = 82 + index * 52;
+    rr(x, y, 136, 42, 9);
+    ctx.fillStyle = PAL.card;
+    ctx.fill();
+    ctx.strokeStyle = PAL.cardLine;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = PAL.ink2;
+    ctx.font = "600 10.5px 'Outfit', sans-serif";
+    ctx.fillText(fit(job.name, 92), x + 9, y + 17);
+    ctx.fillStyle = PAL.muted;
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.fillText(codeOf(job), x + 9, y + 31);
+    ctx.textAlign = "right";
+    ctx.fillStyle = PAL.faint;
+    ctx.font = "8.5px 'JetBrains Mono', monospace";
+    ctx.fillText("en cola", x + 127, y + 31);
+    ctx.textAlign = "left";
+  }
+
+  function drawIncoming(e, job) {
+    var y = laneY(e);
+    var x = clamp(e.x, DOCK_X, SPAWN_X);
+
+    // Estela
+    var trail = ctx.createLinearGradient(x, y, x + 120, y);
+    trail.addColorStop(0, PAL.accent);
+    trail.addColorStop(1, PAL.bg);
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = trail;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 120, y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Cápsula
+    rr(x - 46, y - 21, 92, 42, 21);
+    ctx.fillStyle = PAL.card;
+    ctx.fill();
+    ctx.strokeStyle = PAL.accent;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = PAL.ink;
+    ctx.font = "600 10px 'JetBrains Mono', monospace";
+    ctx.fillText(codeOf(job), x, y - 2);
+    ctx.fillStyle = PAL.muted;
+    ctx.font = "8px 'Outfit', sans-serif";
+    ctx.fillText(fit(job.name, 84), x, y + 12);
+
+    drawAttemptPips(x - 12, y + 27, job.attemptsMade, job.attempts);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  }
+
+  function drawDecision(e, job, ts) {
+    var y = laneY(e);
+    var x = DOCK_X + 14;
+    var pulse = 0.5 + 0.5 * Math.sin(ts / 180);
+    ctx.beginPath();
+    ctx.arc(x, y, 28 + pulse * 6, 0, Math.PI * 2);
+    ctx.strokeStyle = PAL.warn;
+    ctx.globalAlpha = 0.35 + pulse * 0.35;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    rr(x - 38, y - 19, 76, 38, 12);
+    ctx.fillStyle = PAL.card;
+    ctx.fill();
+    ctx.strokeStyle = PAL.warn;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = PAL.warn;
+    ctx.font = "600 11px 'JetBrains Mono', monospace";
+    ctx.fillText(codeOf(job), x, y - 4);
+    ctx.fillStyle = PAL.muted;
+    ctx.font = "8px 'Outfit', sans-serif";
+    ctx.fillText("decisión", x, y + 10);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  }
+
+  function drawDelayed(e, job) {
+    var y = laneY(e);
+    var x = W - 92;
+    var left = Math.max(0, job.readyAt - G.sim.time);
+    var pct = job.lastDelay > 0 ? 1 - left / job.lastDelay : 1;
+
+    ctx.beginPath();
+    ctx.arc(x, y, 24, 0, Math.PI * 2);
+    ctx.strokeStyle = PAL.cardLine;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, 24, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(pct, 0, 1));
+    ctx.strokeStyle = PAL.violet;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = PAL.violet;
+    ctx.font = "600 10px 'JetBrains Mono', monospace";
+    ctx.fillText((left / 1000).toFixed(1) + "s", x, y - 1);
+    ctx.fillStyle = PAL.muted;
+    ctx.font = "7.5px 'Outfit', sans-serif";
+    ctx.fillText("backoff", x, y + 11);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  }
+
+  function drawCompleted(e, index) {
+    var x = 34 + index * 17;
+    var y = FAILED_Y - 16;
+    ctx.beginPath();
+    ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = PAL.ok;
+    ctx.fill();
+    ctx.strokeStyle = PAL.bg2;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawEntities(ts) {
+    var sim = activeSim();
+    var idleIndex = 0;
+    var doneIndex = 0;
+    G.scenario.jobs.forEach(function (spec, index) {
+      var e = G.entities[spec.id];
+      if (!e) return;
+      var job = sim ? sim.jobs[spec.id] : null;
+      if (!job) return;
+      if (e.state === "idle") {
+        drawIdle(e, idleIndex++);
+      } else if (e.state === "incoming") {
+        drawIncoming(e, job);
+      } else if (e.state === "decision") {
+        drawDecision(e, job, ts);
+      } else if (e.state === "delayed") {
+        drawDelayed(e, job);
+      } else if (e.state === "completed") {
+        drawCompleted(e, doneIndex++);
+      }
+    });
+  }
+
+  function drawGraveyard() {
+    var sim = activeSim();
+    var failed = sim ? sim.failed : [];
+    ctx.strokeStyle = PAL.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W - 300, FAILED_Y + 8);
+    ctx.lineTo(W - 24, FAILED_Y + 8);
+    ctx.stroke();
+
+    ctx.textAlign = "right";
+    ctx.fillStyle = PAL.danger;
+    ctx.font = "600 8.5px 'JetBrains Mono', monospace";
+    ctx.fillText("failed · DLQ" + (failed.length ? " (" + failed.length + ")" : ""), W - 28, FAILED_Y - 22);
+    ctx.textAlign = "left";
+
+    var shown = failed.slice(-6);
+    shown.forEach(function (id, i) {
+      var x = W - 54 - i * 40;
+      rr(x - 13, FAILED_Y - 12, 26, 20, 4);
+      ctx.fillStyle = PAL.stone;
+      ctx.fill();
+      ctx.strokeStyle = PAL.cardLine;
+      ctx.stroke();
+      ctx.fillStyle = PAL.bg;
+      ctx.font = "600 8px 'JetBrains Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(String(id).slice(0, 3), x, FAILED_Y + 2);
+      ctx.textAlign = "left";
+    });
+
+    if (!failed.length) {
+      ctx.fillStyle = PAL.faint;
+      ctx.font = "italic 10px 'Outfit', sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("ningún job en failed todavía", W - 28, FAILED_Y - 4);
+      ctx.textAlign = "left";
+    }
+  }
+
+  function draw(ts) {
+    ts = ts || nowMs();
+    drawSpace(ts);
+    drawShip(ts);
+    drawEntities(ts);
+    drawGraveyard();
+  }
+
+  function activeSim() {
+    return G.sim || G.preview;
+  }
+
+  /* ================================================================== */
+  /* 4. Motor de partida y entidades                                     */
+  /* ================================================================== */
+
+  function makeEngine(scenario) {
+    var sim = new Sim.Engine({
+      attempts: CFG.jobOptions.attempts,
+      backoffDelay: CFG.jobOptions.backoff.delay,
+      removeOnFail: CFG.jobOptions.removeOnFail,
+      energy: scenario.energy
+    });
+    scenario.jobs.forEach(function (job) { sim.addJob(job); });
+    return sim;
+  }
+
+  function resetEntities() {
+    G.entities = {};
+    G.scenario.jobs.forEach(function (job, i) {
+      G.entities[job.id] = {
+        id: job.id,
+        lane: i % LANES.length,
+        state: "idle",
+        x: SPAWN_X
+      };
+    });
+  }
+
+  function toast(msg, kind) {
+    var el = $("toast");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.style.color = kind === "bad" ? PAL.danger : (kind === "warn" ? PAL.warn : PAL.accent);
+    if (G.toastTimer) clearTimeout(G.toastTimer);
+    G.toastTimer = setTimeout(function () { el.textContent = ""; }, 2800);
+  }
+
+  function setScenario(index) {
+    G.scenarioIndex = clamp(index, 0, SCENARIOS.length - 1);
+    G.scenario = SCENARIOS[G.scenarioIndex];
+    G.sim = null;
+    G.preview = makeEngine(G.scenario);
+    G.phase = "setup";
+    G.paused = false;
+    G.stalledOnce = false;
+    G.observed = {};
+    G.decision = null;
+    G.hits = [];
+    resetEntities();
+    hideOverlay();
+    hideDecision();
+    renderScenario();
+    renderAll();
+    updateControls();
+    draw(nowMs());
+    toast("Pulsa Iniciar para lanzar los jobs.");
+  }
+
+  function startGame() {
+    if (G.phase === "running") return;
+    if (G.phase === "done") {
+      setScenario(G.scenarioIndex);
+    }
+    G.sim = makeEngine(G.scenario);
+    G.phase = "running";
+    G.paused = false;
+    G.stalledOnce = false;
+    G.decision = null;
+    resetEntities();
+    hideOverlay();
+    hideDecision();
+    renderAll();
+    updateControls();
+    pumpQueue();
+    toast("Los jobs entran desde la derecha. Lee el error antes de decidir.", "warn");
+  }
+
+  function resetGame() {
+    setScenario(G.scenarioIndex);
+  }
+
+  function pumpQueue() {
+    if (!G.sim || G.phase !== "running" || G.decision) return;
+    if (G.sim.active) return;
+    var incoming = Object.keys(G.entities).some(function (id) {
+      return G.entities[id].state === "incoming";
+    });
+    if (incoming) return;
+
+    var next = G.sim.pending[0];
+    if (!next) return;
+    var e = G.entities[next];
+    if (!e || e.state === "completed" || e.state === "failed" || e.state === "incoming") return;
+    e.state = "incoming";
+    e.x = SPAWN_X;
+  }
+
+  function arrive(e) {
+    var sim = G.sim;
+    if (!sim || G.phase !== "running") return;
+    var job = sim.jobs[e.id];
+    if (!job || job.state !== "queued") return;
+
+    var started = sim.start(e.id);
+    if (!started) {
+      e.state = "idle";
+      return;
+    }
+
+    // El worker muere en pleno intento: el stall check devuelve el job
+    // a la cola sin consumir intento ni energía.
+    if (G.scenario.stallOn === e.id && !G.stalledOnce) {
+      G.stalledOnce = true;
+      sim.stall();
+      e.state = "queued";
+      toast("Stall check: el worker murió y el job vuelve a la cola sin gastar intento.", "warn");
+      renderAll();
+      updateControls();
+      pumpQueue();
+      return;
+    }
+
+    var result = sim.runActive();
+
+    if (result.status === "completed") {
+      e.state = "completed";
+      G.hits.push({ id: e.id, t: sim.time });
+      toast("Intento " + result.attempt + " OK · job completed.");
+    } else if (result.status === "failed") {
+      e.state = "failed";
+      toast("Agotó attempts: " + result.error + " · a failed (DLQ).", "bad");
+    } else {
+      e.state = "decision";
+      G.decision = result;
+      showDecision(result);
+    }
+
+    renderAll();
+    updateControls();
+  }
+
+  function doRetry() {
+    if (!G.decision || !G.sim) return;
+    var id = G.decision.job.id;
+    var res = G.sim.retry(id);
+    if (!res.ok) {
+      toast(res.reason + ". Debes mandarlo a failed.", "bad");
+      renderDecision(G.decision);
+      return;
+    }
+    G.entities[id].state = "delayed";
+    G.decision = null;
+    hideDecision();
+    toast("Backoff " + (res.delay / 1000).toFixed(1) + " s · energía " + res.energy + " restante.");
+    renderAll();
+    updateControls();
+    pumpQueue();
+  }
+
+  function doAbandon() {
+    if (!G.decision || !G.sim) return;
+    var id = G.decision.job.id;
+    G.sim.abandon(id);
+    G.entities[id].state = "failed";
+    G.decision = null;
+    hideDecision();
+    toast("Job movido a failed. La DLQ conserva los últimos " + G.sim.removeOnFail + ".", "warn");
+    renderAll();
+    updateControls();
+    pumpQueue();
+  }
+
+  /* ================================================================== */
+  /* 5. Bucle principal                                                  */
+  /* ================================================================== */
+
+  /**
+   * Un paso lógico. El bucle de animation frame y las pruebas comparten esta
+   * función, así el juego se puede avanzar de forma determinista.
+   */
+  function update(dt) {
+    if (G.phase !== "running" || G.paused || G.decision || !G.sim) return false;
+
+    G.sim.advance(dt);
+
+    var ids = Object.keys(G.entities);
+    for (var i = 0; i < ids.length; i++) {
+      var e = G.entities[ids[i]];
+      if (e.state !== "incoming") continue;
+      e.x -= (SPEED * dt) / 1000;
+      if (e.x <= DOCK_X) arrive(e);
+    }
+
+    pumpQueue();
+
+    if (G.sim.isDone()) finish();
+
+    // Los paneles se repintan como mucho 10 veces por segundo; el canvas
+    // sí se dibuja en cada frame.
+    renderHud();
+    if (!G.panelAt || nowMs() - G.panelAt > 100) {
+      G.panelAt = nowMs();
+      renderLadder();
+      renderLog();
+      renderFailedTray();
+      renderObserve();
+    }
+    return true;
+  }
+
+  function frame(ts) {
+    if (!G.last) G.last = ts;
+    var dt = clamp(ts - G.last, 0, 64);
+    G.last = ts;
+    update(dt);
+    draw(ts);
+    G.raf = requestAnimationFrame(frame);
+  }
+
+  /** Avance manual para depuración/pruebas (no depende de rAF). */
+  function step(ms) {
+    var remaining = Math.max(0, ms || 0);
+    var chunk = 50;
+    while (remaining > 0) {
+      var dt = Math.min(chunk, remaining);
+      if (!update(dt)) break;
+      remaining -= dt;
+    }
+    draw(nowMs());
+    return {
+      phase: G.phase,
+      time: G.sim ? G.sim.time : 0,
+      decision: G.decision ? G.decision.job.id : null
+    };
+  }
+
+  function finish() {
+    if (!G.sim || G.phase !== "running") return;
+    G.phase = "done";
+    G.paused = false;
+    G.decision = null;
+    hideDecision();
+    renderAll();
+    updateControls();
+    showOverlay();
+  }
+
+  /* ================================================================== */
+  /* 6. Render de paneles                                                */
+  /* ================================================================== */
+
+  function renderScenario() {
+    $("scenarioKicker").textContent = G.scenario.kicker;
+    $("scenarioTitle").textContent = G.scenario.name;
+    $("scenarioBrief").innerHTML = G.scenario.briefing.map(function (p) {
+      return "<p>" + esc(p) + "</p>";
+    }).join("");
+
+    var chips = [
+      "objetivo " + G.scenario.target + " pts",
+      "energía " + G.scenario.energy,
+      "attempts " + CFG.jobOptions.attempts,
+      G.scenario.jobs.length + " jobs"
+    ];
+    $("scenarioGoal").innerHTML = chips.map(function (c) {
+      return '<span class="g">' + esc(c) + "</span>";
+    }).join("") + (G.scenario.stallOn ? '<span class="note">incluye 1 stall</span>' : "");
+
+    [].forEach.call(document.querySelectorAll(".scn"), function (b) {
+      b.classList.toggle("active", parseInt(b.getAttribute("data-scenario"), 10) === G.scenarioIndex);
+    });
+  }
+
+  function renderHud() {
+    var sim = activeSim();
+    var energy = sim ? sim.energy : G.scenario.energy;
+    var score = sim ? sim.score : 0;
+    var stats = sim ? sim.stats : { attempts: 0 };
+    $("hudScore").textContent = String(score);
+    $("hudEnergy").textContent = String(energy);
+    $("hudCompleted").textContent = String(sim ? sim.completed.length : 0);
+    $("hudFailed").textContent = String(sim ? sim.failed.length : 0);
+    $("hudAttempts").textContent = String(stats.attempts || 0);
+    $("hudTime").textContent = ((sim ? sim.time : 0) / 1000).toFixed(1) + "s";
+    var stat = $("energyStat");
+    if (stat) stat.classList.toggle("hot", energy <= 1);
+  }
+
+  function usedDelays() {
+    var used = {};
+    var sim = activeSim();
+    if (!sim) return used;
+    sim.events.forEach(function (ev) {
+      if (ev.kind !== "backoff") return;
+      var m = /(\d+)\s*ms/.exec(ev.text);
+      if (m) used[Number(m[1])] = true;
+    });
+    return used;
+  }
+
+  function renderLadder() {
+    var sim = activeSim();
+    var ladder = sim ? sim.ladder() : [2000, 4000, 8000];
+    var used = usedDelays();
+    var html = "";
+    ladder.forEach(function (delay, i) {
+      var attempt = i + 1;
+      var isDead = attempt >= CFG.jobOptions.attempts;
+      var isUsed = !!used[delay];
+      var cls = "rung" + (isUsed ? " used" : "") + (isDead ? " dead" : "");
+      var note = isDead ? "no se usa" : (isUsed ? "usado" : "disponible");
+      html += '<div class="' + cls + '">';
+      html += '<span class="rl">Fallo ' + attempt + " → reintento</span>";
+      html += '<span class="rv">' + (delay / 1000) + " s · " + note + "</span>";
+      html += "</div>";
+    });
+    $("ladder").innerHTML = html;
+  }
+
+  function renderObserve() {
+    var list = $("observeList");
+    var html = "";
+    G.scenario.observe.forEach(function (text, i) {
+      var done = !!G.observed[i];
+      html += '<li class="' + (done ? "done" : "") + '" data-observe="' + i + '">';
+      html += '<span class="ob">✓</span><span class="ot">' + esc(text) + "</span></li>";
+    });
+    list.innerHTML = html;
+    var count = Object.keys(G.observed).filter(function (k) { return G.observed[k]; }).length;
+    $("observeBadge").textContent = count + " / " + G.scenario.observe.length;
+  }
+
+  function renderLog() {
+    var sim = activeSim();
+    var events = sim ? sim.events : [];
+    var box = $("eventLog");
+    if (!events.length) {
+      box.innerHTML = '<div class="ev-empty">Sin eventos todavía.</div>';
+      return;
+    }
+    var html = "";
+    events.slice(-60).forEach(function (ev) {
+      html += '<div class="ev ev-' + esc(ev.kind) + '">';
+      html += '<span class="t">' + (ev.t / 1000).toFixed(1) + "s</span>";
+      html += "<span>" + esc(ev.text) + "</span></div>";
+    });
+    box.innerHTML = html;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderFailedTray() {
+    var sim = activeSim();
+    var failed = sim ? sim.failed : [];
+    var tray = $("failedTray");
+    if (!failed.length) {
+      tray.innerHTML = '<span class="ft-empty">vacío</span>';
+      return;
+    }
+    tray.innerHTML = failed.slice(-12).map(function (id) {
+      var job = sim.jobs[id];
+      return '<span class="ft-chip">' + esc(job ? job.name : id) + "</span>";
+    }).join("");
+  }
+
+  function renderAll() {
+    renderHud();
+    renderLadder();
+    renderObserve();
+    renderLog();
+    renderFailedTray();
+  }
+
+  /* ================================================================== */
+  /* 7. Modales y overlay                                                */
+  /* ================================================================== */
+
+  function showDecision(result) {
+    G.decision = result;
+    renderDecision(result);
+    $("decisionModal").classList.remove("hidden");
+    var btn = $("btnRetry");
+    if (btn) btn.focus();
+  }
+
+  function renderDecision(result) {
+    var job = result.job;
+    var sim = G.sim;
+    $("decisionMeta").textContent = "intento " + result.attempt + " / " + job.attempts + " · " + job.kind;
+    $("decisionTitle").textContent = job.name;
+    $("decisionError").textContent = result.error;
+    var retryDelay = sim ? Sim.backoffDelay(result.attempt, sim.baseDelay) : result.delay;
+    if (sim && sim.energy <= 0) {
+      $("decisionStats").textContent =
+        "Sin energía de cola: no puedes reintentar. Mándalo a failed o reinicia el escenario.";
+    } else {
+      $("decisionStats").textContent =
+        "Si reintentas: backoff " + (retryDelay / 1000).toFixed(1) + " s · energía " +
+        sim.energy + " → " + (sim.energy - 1);
+    }
+    var btnRetry = $("btnRetry");
+    if (btnRetry) {
+      btnRetry.disabled = !sim || sim.energy <= 0;
+      btnRetry.textContent = sim && sim.energy <= 0 ? "Sin energía" : "Reintentar (1 energía)";
+    }
+  }
+
+  function hideDecision() {
+    $("decisionModal").classList.add("hidden");
+  }
+
+  function showOverlay() {
+    var sim = G.sim;
+    if (!sim) return;
+    var win = sim.score >= G.scenario.target;
+    var html = '<div class="ov-card">';
+    html += '<span class="eyebrow">' + esc(G.scenario.kicker) + "</span>";
+    html += "<h2>" + (win ? "Objetivo <em>alcanzado</em>" : "Te faltó <em>margen</em>") + "</h2>";
+    html += '<p class="ov-lede">' + (win
+      ? "Leíste los errores: los transitorios se reintentan, el 400 va directo a failed y el stall no gasta intento."
+      : "Reintentar un veneno quema energía que necesitabas para los jobs recuperables. Prueba otra vez leyendo el código de error.") + "</p>";
+
+    html += '<div class="score-line">';
+    html += "<div>puntos<b>" + sim.score + "</b></div>";
+    html += "<div>objetivo<b>" + G.scenario.target + "</b></div>";
+    html += "<div>completed<b>" + sim.completed.length + "</b></div>";
+    html += "<div>failed · DLQ<b>" + sim.failed.length + "</b></div>";
+    html += "<div>energía<b>" + sim.energy + "</b></div>";
+    html += "<div>attempts<b>" + sim.stats.attempts + "</b></div>";
+    html += "<div>stalls<b>" + sim.stats.stalled + "</b></div>";
+    html += "<div>reloj<b>" + (sim.time / 1000).toFixed(1) + "s</b></div>";
+    html += "</div>";
+
+    html += '<p class="ov-lede" style="font-family:var(--mono);font-size:10.5px">failed = { ' +
+      esc(sim.failed.join(", ") || "∅") + " } · removeOnFail " + sim.removeOnFail + "</p>";
+
+    html += '<div class="ov-actions">';
+    html += '<button class="primary" data-overlay="replay">Repetir escenario</button>';
+    if (G.scenarioIndex < SCENARIOS.length - 1) {
+      html += '<button data-overlay="next">Siguiente escenario</button>';
+    }
+    html += '<button data-overlay="close">Cerrar</button>';
+    html += "</div></div>";
+    $("overlay").innerHTML = html;
+    $("overlay").classList.remove("hidden");
+  }
+
+  function hideOverlay() {
+    var el = $("overlay");
+    el.classList.add("hidden");
+    el.innerHTML = "";
+  }
+
+  /* ================================================================== */
+  /* 8. Controles                                                        */
+  /* ================================================================== */
+
+  function updateControls() {
+    var running = G.phase === "running";
+    $("btnStart").disabled = running;
+    $("btnStart").textContent = G.phase === "done" ? "Repetir" : (G.paused ? "Reanudar" : "Iniciar");
+    $("btnPause").disabled = !running;
+    $("btnPause").textContent = G.paused ? "Reanudar" : "Pausa";
+    $("btnReset").disabled = false;
+    [].forEach.call(document.querySelectorAll(".scn"), function (b) {
+      b.disabled = running;
+    });
+  }
+
+  function togglePause() {
+    if (G.phase !== "running") return;
+    G.paused = !G.paused;
+    updateControls();
+    toast(G.paused ? "Pausa: el reloj se detiene." : "Reanudado.");
+    draw(nowMs());
+  }
+
+  function toggleTheme() {
+    var cur = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    setTheme(cur === "dark" ? "light" : "dark");
+  }
+
+  function openHelp() {
+    $("help").classList.remove("hidden");
+    var b = $("btnHelpClose");
+    if (b) b.focus();
+  }
+  function closeHelp() {
+    $("help").classList.add("hidden");
+  }
+
+  function wire() {
+    $("btnStart").addEventListener("click", startGame);
+    $("btnPause").addEventListener("click", togglePause);
+    $("btnReset").addEventListener("click", resetGame);
+    $("btnTheme").addEventListener("click", toggleTheme);
+    $("btnHelp").addEventListener("click", openHelp);
+    $("btnHelpClose").addEventListener("click", closeHelp);
+
+    $("btnRetry").addEventListener("click", doRetry);
+    $("btnAbandon").addEventListener("click", doAbandon);
+
+    $("observeList").addEventListener("click", function (ev) {
+      var li = ev.target.closest("li[data-observe]");
+      if (!li) return;
+      var i = parseInt(li.getAttribute("data-observe"), 10);
+      G.observed[i] = !G.observed[i];
+      renderObserve();
+    });
+
+    $("overlay").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-overlay]");
+      if (!btn) return;
+      var action = btn.getAttribute("data-overlay");
+      if (action === "replay") {
+        setScenario(G.scenarioIndex);
+        startGame();
+      } else if (action === "next") {
+        setScenario(G.scenarioIndex + 1);
+        startGame();
+      } else {
+        hideOverlay();
+      }
+    });
+
+    document.querySelectorAll(".scn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (G.phase === "running") return;
+        setScenario(parseInt(b.getAttribute("data-scenario"), 10));
+      });
+    });
+
+    document.addEventListener("keydown", function (ev) {
+      var tag = (ev.target && ev.target.tagName) || "";
+      if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+      // Con el foco en un botón, Espacio/Enter ya disparan su click.
+      if (tag === "BUTTON" && (ev.key === " " || ev.code === "Space" || ev.key === "Enter")) return;
+      if (ev.key === " " || ev.code === "Space") {
+        if (G.phase === "running") { ev.preventDefault(); togglePause(); }
+      } else if (ev.key === "Enter") {
+        if (G.phase !== "running") { ev.preventDefault(); startGame(); }
+      } else if (ev.key === "r" || ev.key === "R") {
+        resetGame();
+      } else if (ev.key === "1" || ev.key === "2") {
+        if (G.phase !== "running") setScenario(Number(ev.key) - 1);
+      } else if (ev.key === "Escape") {
+        closeHelp();
+      }
+    });
+  }
+
+  /* ================================================================== */
+  /* 9. Arranque                                                         */
+  /* ================================================================== */
+
+  setTheme(initialTheme(), { silent: true });
+  setScenario(0);
+  wire();
+  requestAnimationFrame(frame);
+
+  window.BalaGame = {
+    get state() { return G; },
+    get engine() { return G.sim || G.preview; },
+    scenarios: SCENARIOS,
+    config: CFG,
+    setScenario: setScenario,
+    start: startGame,
+    reset: resetGame,
+    pause: togglePause,
+    retry: doRetry,
+    abandon: doAbandon,
+    step: step,
+    draw: draw,
+    render: renderAll,
+    finish: finish
+  };
+
+</script>
+</body>
+</html>
