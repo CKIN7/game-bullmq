@@ -340,6 +340,7 @@
     playing: false,
     speed: 1,
     lastTs: 0,
+    tickAccumulator: 0,
     finished: false,
     logLen: 0
   };
@@ -359,6 +360,7 @@
     state.playing = false;
     state.finished = false;
     state.logLen = 0;
+    state.tickAccumulator = 0;
     renderScenarioBar();
     renderMission();
     renderRules();
@@ -500,6 +502,7 @@
     if (state.finished) return;
     state.playing = !state.playing;
     state.lastTs = 0;
+    state.tickAccumulator = 0;
     updatePlayButton();
     say(state.playing ? "Simulando..." : "En pausa");
   }
@@ -523,6 +526,7 @@
     state.playing = false;
     state.finished = false;
     state.logLen = 0;
+    state.tickAccumulator = 0;
     renderRules();
     renderHud();
     renderLog();
@@ -658,7 +662,11 @@
     state.lastTs = ts;
 
     if (state.playing && !state.finished) {
-      var ticks = Math.floor(dt * TICKS_PER_SECOND * state.speed);
+      // El acumulador conserva la parte fraccionaria: sin el, a 60 fps
+      // floor(dt * 10 * velocidad) seria 0 y la simulacion no avanzaria.
+      state.tickAccumulator += dt * TICKS_PER_SECOND * state.speed;
+      var ticks = Math.floor(state.tickAccumulator);
+      state.tickAccumulator -= ticks;
       for (var i = 0; i < ticks; i++) {
         if (!state.engine.step()) break;
       }
