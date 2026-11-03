@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juego 3 — Cascada · BullMQ</title>
+<style>
+  :root{
+    --bg:#080d18; --bg2:#0b1322; --panel:#0d1728; --panel2:#101d33;
+    --line:#1e3050; --line-soft:#172642; --ink:#e9eefc; --ink2:#c2cee6;
+    --muted:#8ea2c6; --faint:#5d7196; --accent:#5eead4; --accent2:#22d3ee;
+    --warn:#fbbf24; --danger:#fb7185; --ok:#34d399; --violet:#a78bfa;
+    --card:#0f1b30; --card-line:#22375c; --focus:#102a3d;
+    --sh:0 18px 50px rgba(0,0,0,.45); --sh2:0 3px 14px rgba(0,0,0,.35);
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+    --sans:"Outfit",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  }
+  [data-theme="light"]{
+    --bg:#eef4f7; --bg2:#e3edf3; --panel:#ffffff; --panel2:#f3f8fb;
+    --line:#cfdde8; --line-soft:#e0eaf2; --ink:#0e1b2a; --ink2:#26384d;
+    --muted:#5d7290; --faint:#8ba0b8; --accent:#0f766e; --accent2:#0e7490;
+    --warn:#a16207; --danger:#be123c; --ok:#047857; --violet:#6d28d9;
+    --card:#ffffff; --card-line:#d6e2ec; --focus:#e6f4f1;
+    --sh:0 18px 50px rgba(20,50,70,.14); --sh2:0 3px 14px rgba(20,50,70,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    background:
+      radial-gradient(1200px 620px at 82% -10%, color-mix(in srgb, var(--accent2) 14%, transparent), transparent 60%),
+      radial-gradient(900px 520px at 8% 0%, color-mix(in srgb, var(--violet) 12%, transparent), transparent 62%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased;
+  }
+  .shell{max-width:1380px;margin:0 auto;padding:22px 22px 40px}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
+  .brand h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4.2vw,48px);line-height:.98;margin:6px 0 0;letter-spacing:-.02em}
+  .brand h1 em{font-style:italic;color:var(--accent)}
+  .brand p{margin:8px 0 0;max-width:78ch;color:var(--muted);font-size:13px;line-height:1.55}
+  .brand code{font-family:var(--mono);font-size:.92em;color:var(--ink2);background:var(--panel2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .stat{min-width:74px;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);box-shadow:var(--sh2)}
+  .stat .v{font-family:var(--mono);font-size:18px;font-weight:600;line-height:1.1}
+  .stat .l{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+  .stat.hot{border-color:var(--warn)}
+  .stat.hot .v{color:var(--warn)}
+  .stat.bad{border-color:var(--danger)}
+  .stat.bad .v{color:var(--danger)}
+
+  .scenario-bar{display:flex;gap:8px;margin:12px 0 14px;flex-wrap:wrap}
+  .scn{border:1px solid var(--line);background:var(--panel);color:var(--ink2);border-radius:999px;padding:8px 14px;font:600 11.5px var(--sans);cursor:pointer;transition:.16s}
+  .scn:hover{border-color:var(--accent);color:var(--ink)}
+  .scn.active{background:var(--accent);border-color:var(--accent);color:#04120f}
+  .scn:disabled{opacity:.5;cursor:not-allowed}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 384px;gap:16px;align-items:start}
+  .stage{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--sh)}
+  #stage{position:relative;height:460px;border-radius:12px;overflow:hidden;background:#080d18;border:1px solid var(--line-soft)}
+  #stage canvas{display:block;width:100%;height:100%}
+  .legend{position:absolute;left:12px;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:9.5px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .stage-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px}
+  .controls{display:flex;gap:7px;flex-wrap:wrap}
+  .controls button,.modal-actions button{border:1px solid var(--line);background:var(--panel2);color:var(--ink2);border-radius:9px;padding:8px 12px;font:600 11.5px var(--sans);cursor:pointer;transition:.16s}
+  .controls button:hover:not(:disabled),.modal-actions button:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
+  .controls button.primary,.modal-actions button.primary{background:var(--accent);border-color:var(--accent);color:#04120f}
+  .controls button:disabled,.modal-actions button:disabled{opacity:.45;cursor:not-allowed}
+  .controls button.spd.on{background:var(--accent2);border-color:var(--accent2);color:#04120f}
+  .toast{min-height:18px;font-size:11.5px;color:var(--accent);font-family:var(--mono)}
+
+  .side{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:var(--sh2)}
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .panel-head h3{margin:0;font-size:12.5px;font-weight:600}
+  .badge{font-family:var(--mono);font-size:9px;letter-spacing:.05em;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
+  .mission h2{font-family:var(--serif);font-weight:400;font-size:27px;margin:8px 0 8px;letter-spacing:-.01em}
+  .brief{font-size:12px;line-height:1.55;color:var(--ink2)}
+  .brief p{margin:0 0 7px}
+  .goal{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line)}
+  .goal .g{font-family:var(--mono);font-size:10.5px;color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:3px 7px;background:var(--card)}
+
+  .rule{border:1px solid var(--line-soft);border-radius:10px;padding:9px 10px;background:var(--panel2);margin-bottom:8px}
+  .rule-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .rule label{font-size:11.5px;font-weight:600;color:var(--ink)}
+  .rule .src{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:6px;line-height:1.4}
+  .rule select{background:var(--card);color:var(--ink2);border:1px solid var(--line);border-radius:7px;padding:5px 7px;font:600 11px var(--mono);cursor:pointer}
+  .switch{position:relative;width:40px;height:22px;flex:none}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .switch i{position:absolute;inset:0;border-radius:999px;background:var(--card);border:1px solid var(--line);transition:.18s;pointer-events:none}
+  .switch i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:.18s}
+  .switch input:checked + i{background:var(--accent);border-color:var(--accent)}
+  .switch input:checked + i::after{transform:translateX(18px);background:#04120f}
+  .rule-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:6px}
+  .rule-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+
+  .observe{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+  .observe li{display:flex;gap:7px;align-items:flex-start;font-size:11px;line-height:1.4;color:var(--ink2)}
+  .observe li .ob{width:14px;height:14px;border:1px solid var(--line);border-radius:4px;background:var(--card);flex:none;margin-top:1px;display:grid;place-items:center;font-size:9px;color:transparent}
+  .observe li.done .ob{background:var(--accent);border-color:var(--accent);color:#04120f}
+  .observe li.done .ot{color:var(--muted)}
+
+  .event-log{max-height:210px;overflow:auto;font-family:var(--mono);font-size:9.5px;line-height:1.5;display:flex;flex-direction:column;gap:2px}
+  .ev{display:grid;grid-template-columns:38px 1fr;gap:6px;padding:2px 4px;border-radius:4px}
+  .ev .t{color:var(--faint)}
+  .ev-failed,.ev-collision,.ev-unwanted,.ev-spam{color:var(--danger)}
+  .ev-persist,.ev-sent{color:var(--ok)}
+  .ev-ignored,.ev-dedup,.ev-warn{color:var(--warn)}
+  .ev-add,.ev-active,.ev-complete{color:var(--accent)}
+  .ev-rule{color:var(--violet)}
+  .ev-empty{color:var(--faint);font-family:var(--sans);font-size:11px}
+
+  .overlay{position:fixed;inset:0;background:rgba(3,8,16,.72);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:50}
+  .overlay.hidden,.modal.hidden{display:none !important}
+  .ov-card,.modal-card{width:min(620px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--sh)}
+  .ov-card h2,.modal-card h2{font-family:var(--serif);font-weight:400;font-size:30px;margin:8px 0 8px}
+  .ov-card h2 em,.modal-card h2 em{font-style:italic;color:var(--accent)}
+  .ov-lede{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0 0 12px}
+  .score-line{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}
+  .score-line div{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .score-line b{display:block;font-family:var(--sans);font-size:22px;color:var(--ink);margin-top:2px}
+  .ov-actions,.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .modal{position:fixed;inset:0;background:rgba(3,8,16,.78);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:60}
+  .modal .meta{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.55}
+  .modal .modal-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 0}
+  .help-body{font-size:12px;line-height:1.6;color:var(--ink2)}
+  .help-body b{color:var(--ink)}
+  .help-body code{font-family:var(--mono);font-size:.92em;background:var(--panel2);border:1px solid var(--line-soft);border-radius:4px;padding:1px 4px}
+  .help-body ul{margin:8px 0;padding-left:18px}
+  table.cmp{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:8px}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  table.cmp th{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel2)}
+  table.cmp td.num{font-family:var(--mono);text-align:right}
+  table.cmp tr.bad td{color:var(--danger)}
+  @media (max-width:1080px){.layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr;align-items:start}.log-panel{grid-column:1/-1}}
+  @media (max-width:720px){.side{grid-template-columns:1fr}.shell{padding:14px}.hud .stat{min-width:64px;padding:7px 9px}.stat .v{font-size:15px}#stage{height:340px}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">Juego 3 · BullMQ · fan-out en dos etapas</div>
+      <h1>Casca<em>da</em></h1>
+      <p>Un evento se bifurca en canales: <code>notification-fanout</code> reparte,
+        <code>email-transactional</code> y <code>notification-inapp</code> ejecutan,
+        y <code>notifications</code> persiste con <code>INSERT IGNORE</code> y la
+        restriccion <code>UNIQUE (user_id, type, dedupe_key)</code>. Tu decides las reglas
+        y la constelacion te muestra lo que pasa.</p>
+    </div>
+    <div class="hud">
+      <div class="stat"><div class="v" id="hud-score">0</div><div class="l">puntos</div></div>
+      <div class="stat"><div class="v" id="hud-target">0</div><div class="l">objetivo</div></div>
+      <div class="stat"><div class="v" id="hud-rows">0</div><div class="l">filas</div></div>
+      <div class="stat"><div class="v" id="hud-mails">0</div><div class="l">correos</div></div>
+      <div class="stat" id="hud-spam-box"><div class="v" id="hud-spam">0</div><div class="l">spam</div></div>
+      <div class="stat" id="hud-lost-box"><div class="v" id="hud-lost">0</div><div class="l">perdidas</div></div>
+      <button class="controls button" id="btn-theme" title="Tema claro/oscuro" style="padding:8px 12px">◐</button>
+    </div>
+  </header>
+
+  <nav class="scenario-bar" id="scenario-bar"></nav>
+
+  <div class="layout">
+    <section class="stage">
+      <div id="stage">
+        <div class="legend">
+          <span><i style="background:#a78bfa"></i>evento</span>
+          <span><i style="background:#22d3ee"></i>fan-out</span>
+          <span><i style="background:#5eead4"></i>entregado</span>
+          <span><i style="background:#fbbf24"></i>ignorado</span>
+          <span><i style="background:#fb7185"></i>spam o perdida</span>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <div class="controls">
+          <button id="btn-play" class="primary">Simular</button>
+          <button id="btn-step">Paso</button>
+          <button id="btn-reset">Reiniciar</button>
+          <button class="spd on" data-speed="1">1×</button>
+          <button class="spd" data-speed="2">2×</button>
+          <button class="spd" data-speed="4">4×</button>
+          <button id="btn-compare">Comparar</button>
+          <button id="btn-help">Ayuda</button>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="panel mission">
+        <div class="panel-head"><h3>Mision</h3><span class="badge" id="mission-kicker">Nivel 1</span></div>
+        <h2 id="mission-name">—</h2>
+        <div class="brief" id="mission-brief"></div>
+        <div class="goal"><span class="g" id="mission-goal">Objetivo 0</span><span class="note" id="mission-hint"></span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Reglas de la cascada</h3><span class="badge">tu configuracion</span></div>
+
+        <div class="rule">
+          <div class="rule-top">
+            <label for="rule-preference">Respetar user_settings.notify_*</label>
+            <span class="switch"><input type="checkbox" id="rule-preference"><i></i></span>
+          </div>
+          <div class="rule-hint">Si lo apagas, el fan-out encola los canales sin mirar la preferencia del usuario.</div>
+          <div class="src">workers/notificationWorker.ts · user_settings.notify_email / notify_inapp</div>
+        </div>
+
+        <div class="rule">
+          <div class="rule-top">
+            <label for="rule-jobid">jobId del job de canal</label>
+            <select id="rule-jobid">
+              <option value="porEvento">por evento (estable)</option>
+              <option value="porEmision">distinto por emision</option>
+              <option value="fijo">fijo para todo</option>
+            </select>
+          </div>
+          <div class="rule-hint">BullMQ ignora un <code>add</code> con un jobId ya usado <b>en esa cola</b>.</div>
+          <div class="src">queues/notificationQueue.ts · queues/emailQueue.ts</div>
+        </div>
+
+        <div class="rule">
+          <div class="rule-top">
+            <label for="rule-dedupe">dedupe_key de la fila</label>
+            <select id="rule-dedupe">
+              <option value="porEvento">review + pelicula + usuario</option>
+              <option value="porUsuario">solo por usuario</option>
+              <option value="fijo">fijo</option>
+            </select>
+          </div>
+          <div class="rule-hint">La restriccion es <code>UNIQUE (user_id, type, dedupe_key)</code>: si la clave no distingue dos reviews, una se traga.</div>
+          <div class="src">db/migrations (notifications) · jobs/notificationFanoutJob.ts</div>
+        </div>
+
+        <div class="rule">
+          <div class="rule-top">
+            <label for="rule-insert">INSERT IGNORE</label>
+            <span class="switch"><input type="checkbox" id="rule-insert"><i></i></span>
+          </div>
+          <div class="rule-hint">Con IGNORE el duplico no inserta nada y el trabajo termina bien. Sin IGNORE, el job revienta contra UNIQUE.</div>
+          <div class="src">jobs/notificationFanoutJob.ts · tabla notifications</div>
+        </div>
+
+        <div class="rule-actions">
+          <button id="btn-default-rules">Reglas del nivel</button>
+          <button id="btn-reset-rules">Todo a cero</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Observaciones</h3><span class="badge" id="observe-count">0/0</span></div>
+        <ul class="observe" id="observe-list"></ul>
+      </div>
+
+      <div class="panel log-panel">
+        <div class="panel-head"><h3>Bitacora</h3><span class="badge">motor</span></div>
+        <div class="event-log" id="event-log"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <div class="ov-card">
+    <div class="eyebrow" id="ov-kicker">Nivel 1</div>
+    <h2 id="ov-title">Objetivo <em>cumplido</em></h2>
+    <p class="ov-lede" id="ov-lede"></p>
+    <div class="score-line">
+      <div>PUNTOS<b id="ov-score">0</b></div>
+      <div>OBJETIVO<b id="ov-target">0</b></div>
+      <div>FILAS<b id="ov-rows">0</b></div>
+      <div>CORREOS<b id="ov-mails">0</b></div>
+      <div>SPAM<b id="ov-spam">0</b></div>
+      <div>PERDIDAS<b id="ov-lost">0</b></div>
+    </div>
+    <div class="ov-actions">
+      <button id="ov-retry">Repetir nivel</button>
+      <button id="ov-next" class="primary">Siguiente nivel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-help">
+  <div class="modal-card">
+    <h2>Como se juega</h2>
+    <div class="help-body">
+      <p>Cada estrella es un <b>evento</b> (<code>review.published</code>). La constelacion
+        muestra la cascada real del API en dos etapas:</p>
+      <ul>
+        <li><b>Etapa 1</b> — el evento entra en <code>notification-fanout</code> (prioridad 1).</li>
+        <li><b>Etapa 2</b> — el fan-out lee <code>user_settings</code> y encola un job por canal:
+          <code>email-transactional</code> (prioridad 5) y <code>notification-inapp</code> (prioridad 3).</li>
+        <li><b>Destino</b> — la rama in-app hace <code>INSERT IGNORE</code> en <code>notifications</code>
+          con <code>UNIQUE (user_id, type, dedupe_key)</code>; la rama email envia el aviso.</li>
+      </ul>
+      <p>Tu tarea es <b>configurar las cuatro reglas</b> y pulsar <b>Simular</b>. Cada nivel
+        aisla una de ellas. Cambia una regla, reinicia y compara: la constelacion enseña
+        lo que hace cada decision.</p>
+      <p class="meta">El motor es determinista: misma semilla, misma partida. No hay red.</p>
+    </div>
+    <div class="modal-actions"><button id="help-close" class="primary">Entendido</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-compare">
+  <div class="modal-card">
+    <h2>Comparar <em>configuraciones</em></h2>
+    <p class="ov-lede" id="cmp-lede"></p>
+    <table class="cmp" id="cmp-table"></table>
+    <p class="modal-note" id="cmp-note"></p>
+    <div class="modal-actions"><button id="cmp-close" class="primary">Cerrar</button></div>
+  </div>
+</div>
+
+<script src="vendor/three/three.min.js"></script>
+<script src="config/cascade-config.js"></script>
+<script src="engine/cascade-sim.js"></script>
+<script src="engine/scenarios-juego-3.js"></script>
+<script src="engine/constellation.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var CONFIG = window.CascadeConfig;
+  var SCENARIOS = window.CascadeScenarios;
+  var Engine = window.CascadeSim.Engine;
+  var View = window.CascadeView.View;
+
+  var TICKS_PER_SECOND = 10;   // 10 ticks/s a 1x -> 1 s virtual por segundo real
+  var SEED = 7;
+
+  var state = {
+    index: 0,
+    engine: null,
+    view: null,
+    playing: false,
+    speed: 1,
+    lastTs: 0,
+    tickAccumulator: 0,
+    finished: false,
+    logLen: 0
+  };
+
+  function el(id) { return document.getElementById(id); }
+  function scenario() { return SCENARIOS[state.index]; }
+
+  /* ---------------------------------------------------------------- */
+  /* Carga de nivel                                                   */
+  /* ---------------------------------------------------------------- */
+
+  function loadScenario(index) {
+    state.index = index;
+    state.engine = new Engine({ config: CONFIG, seed: SEED, rules: SCENARIOS[index].rules });
+    state.engine.load(SCENARIOS[index]);
+    if (state.view) state.view.clear();
+    state.playing = false;
+    state.finished = false;
+    state.logLen = 0;
+    state.tickAccumulator = 0;
+    renderScenarioBar();
+    renderMission();
+    renderRules();
+    renderObserve();
+    renderLog();
+    renderHud();
+    updatePlayButton();
+    say("Nivel " + SCENARIOS[index].number + " listo · " + SCENARIOS[index].name);
+  }
+
+  function renderScenarioBar() {
+    var bar = el("scenario-bar");
+    bar.innerHTML = "";
+    SCENARIOS.forEach(function (item, index) {
+      var button = document.createElement("button");
+      button.className = "scn" + (index === state.index ? " active" : "");
+      button.textContent = item.number + ". " + item.name;
+      button.addEventListener("click", function () { loadScenario(index); });
+      bar.appendChild(button);
+    });
+  }
+
+  function renderMission() {
+    var item = scenario();
+    el("mission-kicker").textContent = "Nivel " + item.number;
+    el("mission-name").textContent = item.name;
+    el("mission-brief").innerHTML = item.briefing.map(function (line) {
+      return "<p>" + line + "</p>";
+    }).join("");
+    el("mission-goal").textContent = "Objetivo " + item.target + " pts";
+    el("mission-hint").textContent = item.hint;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Reglas                                                           */
+  /* ---------------------------------------------------------------- */
+
+  function renderRules() {
+    var rules = state.engine.rulesSnapshot();
+    el("rule-preference").checked = rules.respectPreference;
+    el("rule-jobid").value = rules.jobIdStrategy;
+    el("rule-dedupe").value = rules.dedupeScope;
+    el("rule-insert").checked = rules.insertIgnore;
+  }
+
+  function bindRuleControls() {
+    el("rule-preference").addEventListener("change", function () {
+      state.engine.setRule("respectPreference", this.checked);
+      say("Respetar preferencia: " + this.checked);
+    });
+    el("rule-jobid").addEventListener("change", function () {
+      state.engine.setRule("jobIdStrategy", this.value);
+      say("jobId: " + this.value);
+    });
+    el("rule-dedupe").addEventListener("change", function () {
+      state.engine.setRule("dedupeScope", this.value);
+      say("dedupe_key: " + this.value);
+    });
+    el("rule-insert").addEventListener("change", function () {
+      state.engine.setRule("insertIgnore", this.checked);
+      say("INSERT IGNORE: " + this.checked);
+    });
+    el("btn-default-rules").addEventListener("click", function () {
+      state.engine.rules = Object.assign({}, scenario().rules);
+      renderRules();
+      say("Reglas del nivel restauradas");
+    });
+    el("btn-reset-rules").addEventListener("click", function () {
+      state.engine.resetRules();
+      renderRules();
+      say("Reglas del contrato del proyecto restauradas");
+    });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* HUD, observaciones y bitacora                                    */
+  /* ---------------------------------------------------------------- */
+
+  function renderHud() {
+    var summary = state.engine.summary();
+    el("hud-score").textContent = summary.score;
+    el("hud-target").textContent = scenario().target;
+    el("hud-rows").textContent = summary.rows;
+    el("hud-mails").textContent = summary.emails;
+    el("hud-spam").textContent = summary.stats.duplicateEmails + summary.stats.unwantedEmails;
+    el("hud-lost").textContent = summary.stats.lost;
+    el("hud-spam-box").className = "stat" + (summary.stats.duplicateEmails + summary.stats.unwantedEmails > 0 ? " bad" : "");
+    el("hud-lost-box").className = "stat" + (summary.stats.lost > 0 ? " bad" : "");
+  }
+
+  function renderObserve() {
+    var summary = state.engine.summary();
+    var list = el("observe-list");
+    list.innerHTML = "";
+    var done = 0;
+    scenario().observe.forEach(function (item) {
+      var seen = !!summary.observed[item.flag];
+      if (seen) done++;
+      var li = document.createElement("li");
+      li.className = seen ? "done" : "";
+      li.innerHTML = '<span class="ob">&#10003;</span><span class="ot">' + item.text + "</span>";
+      list.appendChild(li);
+    });
+    el("observe-count").textContent = done + "/" + scenario().observe.length;
+  }
+
+  function renderLog() {
+    var container = el("event-log");
+    if (state.engine.log.length === state.logLen) return;
+    container.innerHTML = "";
+    if (!state.engine.log.length) {
+      container.innerHTML = '<div class="ev-empty">Sin eventos todavia.</div>';
+      state.logLen = 0;
+      return;
+    }
+    state.engine.log.forEach(function (entry) {
+      var div = document.createElement("div");
+      div.className = "ev ev-" + entry.kind;
+      div.innerHTML = '<span class="t">' + entry.t + "ms</span><span>" + entry.text + "</span>";
+      container.appendChild(div);
+    });
+    state.logLen = state.engine.log.length;
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function say(text) {
+    el("toast").textContent = text;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Reproduccion                                                     */
+  /* ---------------------------------------------------------------- */
+
+  function updatePlayButton() {
+    el("btn-play").textContent = state.playing ? "Pausa" : "Simular";
+  }
+
+  function togglePlay() {
+    if (state.finished) return;
+    state.playing = !state.playing;
+    state.lastTs = 0;
+    state.tickAccumulator = 0;
+    updatePlayButton();
+    say(state.playing ? "Simulando..." : "En pausa");
+  }
+
+  function stepOnce() {
+    if (state.finished) return;
+    state.playing = false;
+    updatePlayButton();
+    state.engine.step();
+    state.view.sync(state.engine.graph);
+    renderHud();
+    renderLog();
+    renderObserve();
+    checkFinished();
+  }
+
+  function resetLevel() {
+    state.engine.reset();
+    state.engine.rules = Object.assign({}, state.engine.rules);
+    state.view.clear();
+    state.playing = false;
+    state.finished = false;
+    state.logLen = 0;
+    state.tickAccumulator = 0;
+    renderRules();
+    renderHud();
+    renderLog();
+    renderObserve();
+    updatePlayButton();
+    say("Reiniciado con la misma semilla");
+  }
+
+  function checkFinished() {
+    if (state.finished) return;
+    if (!state.engine.isDone()) return;
+    state.engine.finalize();
+    state.view.sync(state.engine.graph);
+    state.finished = true;
+    state.playing = false;
+    updatePlayButton();
+    renderHud();
+    renderObserve();
+    showResult();
+  }
+
+  function showResult() {
+    var summary = state.engine.summary();
+    var target = scenario().target;
+    var passed = summary.score >= target;
+    el("ov-kicker").textContent = "Nivel " + scenario().number + " · " + scenario().name;
+    el("ov-title").innerHTML = passed
+      ? "Objetivo <em>cumplido</em>"
+      : "Todavia <em>falta</em>";
+    el("ov-lede").textContent = passed
+      ? "La cascada quedo como en el API: respeto, dedupe_key por evento, INSERT IGNORE y jobId estable."
+      : "Faltan puntos. Revisa la bitacora: cada regla mal puesta tiene un precio visible en la constelacion.";
+    el("ov-score").textContent = summary.score;
+    el("ov-target").textContent = target;
+    el("ov-rows").textContent = summary.rows;
+    el("ov-mails").textContent = summary.emails;
+    el("ov-spam").textContent = summary.stats.duplicateEmails + summary.stats.unwantedEmails;
+    el("ov-lost").textContent = summary.stats.lost;
+    el("ov-next").disabled = state.index >= SCENARIOS.length - 1;
+    el("overlay").classList.remove("hidden");
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Comparar A/B                                                     */
+  /* ---------------------------------------------------------------- */
+
+  var NAIVE_RULES = {
+    respectPreference: false,
+    jobIdStrategy: "porEmision",
+    dedupeScope: "porUsuario",
+    insertIgnore: false
+  };
+
+  function compare() {
+    var mine = state.engine.summary();
+    var baseline = new Engine({ config: CONFIG, seed: SEED, rules: NAIVE_RULES });
+    baseline.load(scenario());
+    baseline.runToIdle();
+    baseline.finalize();
+    var other = baseline.summary();
+
+    var rows = [
+      ["Notificaciones entregadas", mine.stats.delivered, other.stats.delivered],
+      ["Correos enviados", mine.stats.emails, other.stats.emails],
+      ["Correos duplicados", mine.stats.duplicateEmails, other.stats.duplicateEmails],
+      ["Correos no deseados", mine.stats.unwantedEmails, other.stats.unwantedEmails],
+      ["Notificaciones perdidas", mine.stats.lost, other.stats.lost],
+      ["Duplicados absorbidos", mine.stats.ignored, other.stats.ignored],
+      ["Puntos", mine.score, other.score]
+    ];
+
+    var html = "<thead><tr><th>Metrica</th><th>Tu configuracion</th><th>Configuracion ingenua</th></tr></thead><tbody>";
+    rows.forEach(function (row) {
+      var bad = row[2] > row[1];
+      html += "<tr" + (bad ? ' class="bad"' : "") + "><td>" + row[0] +
+        '</td><td class="num">' + row[1] + '</td><td class="num">' + row[2] + "</td></tr>";
+    });
+    html += "</tbody>";
+    el("cmp-table").innerHTML = html;
+    el("cmp-lede").textContent = "La configuracion ingenua encola sin mirar la preferencia, usa un jobId distinto por emision, un dedupe_key por usuario y INSERT normal.";
+    el("cmp-note").textContent = "Simulador determinista: los dos lados corrieron el mismo escenario con la misma semilla.";
+    el("modal-compare").classList.remove("hidden");
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Arranque                                                         */
+  /* ---------------------------------------------------------------- */
+
+  function bindControls() {
+    el("btn-play").addEventListener("click", togglePlay);
+    el("btn-step").addEventListener("click", stepOnce);
+    el("btn-reset").addEventListener("click", resetLevel);
+    el("btn-compare").addEventListener("click", compare);
+    el("btn-help").addEventListener("click", function () {
+      el("modal-help").classList.remove("hidden");
+    });
+    el("help-close").addEventListener("click", function () {
+      el("modal-help").classList.add("hidden");
+    });
+    el("cmp-close").addEventListener("click", function () {
+      el("modal-compare").classList.add("hidden");
+    });
+    el("ov-retry").addEventListener("click", function () {
+      el("overlay").classList.add("hidden");
+      resetLevel();
+    });
+    el("ov-next").addEventListener("click", function () {
+      el("overlay").classList.add("hidden");
+      if (state.index < SCENARIOS.length - 1) loadScenario(state.index + 1);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".spd"), function (button) {
+      button.addEventListener("click", function () {
+        state.speed = parseInt(button.getAttribute("data-speed"), 10);
+        Array.prototype.forEach.call(document.querySelectorAll(".spd"), function (other) {
+          other.classList.toggle("on", other === button);
+        });
+        say("Velocidad " + state.speed + "x");
+      });
+    });
+    el("btn-theme").addEventListener("click", function () {
+      var root = document.documentElement;
+      var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("cascada-theme", next); } catch (error) { /* file:// */ }
+      if (state.view) state.view.renderer.setClearColor(next === "dark" ? 0x080d18 : 0xe3edf3, 1);
+    });
+  }
+
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    if (!state.lastTs) state.lastTs = ts;
+    var dt = (ts - state.lastTs) / 1000;
+    state.lastTs = ts;
+
+    if (state.playing && !state.finished) {
+      // El acumulador conserva la parte fraccionaria: sin el, a 60 fps
+      // floor(dt * 10 * velocidad) seria 0 y la simulacion no avanzaria.
+      state.tickAccumulator += dt * TICKS_PER_SECOND * state.speed;
+      var ticks = Math.floor(state.tickAccumulator);
+      state.tickAccumulator -= ticks;
+      for (var i = 0; i < ticks; i++) {
+        if (!state.engine.step()) break;
+      }
+      state.view.sync(state.engine.graph);
+      renderHud();
+      renderLog();
+      renderObserve();
+      checkFinished();
+    }
+
+    state.view.render();
+  }
+
+  function boot() {
+    try {
+      var saved = localStorage.getItem("cascada-theme");
+      if (saved) document.documentElement.setAttribute("data-theme", saved);
+    } catch (error) { /* file:// */ }
+
+    state.view = new View({ container: el("stage"), THREE: window.THREE });
+    bindControls();
+    bindRuleControls();
+    loadScenario(0);
+    requestAnimationFrame(frame);
+  }
+
+  // API para inspeccionar el juego con las mismas herramientas que lo usan.
+  window.CascadeGame = {
+    state: state,
+    config: CONFIG,
+    scenarios: SCENARIOS,
+    engine: function () { return state.engine; },
+    view: function () { return state.view; },
+    loadScenario: loadScenario,
+    reset: resetLevel,
+    step: stepOnce,
+    start: togglePlay,
+    setRule: function (key, value) {
+      var result = state.engine.setRule(key, value);
+      renderRules();
+      return result;
+    },
+    compare: compare
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
