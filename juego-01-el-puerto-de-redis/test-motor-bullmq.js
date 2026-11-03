@@ -7,7 +7,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const HTML = path.join(__dirname, 'bullmq-juegos-propuesta.html');
+// La propuesta vive en la carpeta de visión general, junto al resto de juegos.
+const HTML = path.join(__dirname, '..', 'juegos-vision-general-bullmq', 'bullmq-juegos-propuesta.html');
 const html = fs.readFileSync(HTML, 'utf8');
 
 const m = html.match(/<script>([\s\S]*?)<\/script>/);

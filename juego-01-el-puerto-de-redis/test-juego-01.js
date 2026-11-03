@@ -18,8 +18,8 @@ const {
   zoneFor,
   PRIORITY_MULT,
   DELAY_MULT
-} = require("../engine/bullmq-sim.js");
-const WAVES = require("../engine/waves-juego-01.js");
+} = require("./engine/bullmq-sim.js");
+const WAVES = require("./engine/waves-juego-01.js");
 
 let passed = 0;
 let failed = 0;
@@ -239,7 +239,7 @@ console.log("\n[9] Banco de preguntas del aula (content/quiz-juego-01.js)");
 /* ------------------------------------------------------------------ */
 
 {
-  const QUIZ = require("../content/quiz-juego-01.js");
+  const QUIZ = require("./content/quiz-juego-01.js");
   const QUIZ_POINTS = 50;
 
   check("hay un paquete de preguntas por oleada", () => {

@@ -1,7 +1,7 @@
 /**
  * BullMQSim — motor de simulación determinista de BullMQ v5 sobre Redis.
  *
- * Copia vendorizada del motor del Juego 01 (engine/bullmq-sim.js) para que
+ * Copia vendorizada del motor del Juego 01 (juego-01-el-puerto-de-redis/engine/bullmq-sim.js) para que
  * juego-1-api/ siga siendo autocontenido. Conviene mantener ambos en sincronía.
  *
  * No reproduce la API de Node; reproduce las ESTRUCTURAS y los scripts:
