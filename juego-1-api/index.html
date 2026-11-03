@@ -278,10 +278,10 @@
     <div class="brand">
       <span class="eyebrow">Juego 1 · BullMQ · api-movies</span>
       <h1>Despacho <em>Prioritario</em></h1>
-      <p>Una sola cola y dos zonas: <code>wait</code> (LIST) y <code>prioritized</code> (ZSET). Descubre por qué gana el número <b>menor</b>… y por qué un <b>0</b> sorprende a todos.</p>
+      <p>Cuatro niveles sobre una sola cola y dos zonas: <code>wait</code> (LIST) y <code>prioritized</code> (ZSET). Descubre por qué gana el número <b>menor</b>, por qué un <b>0</b> sorprende, por qué un lote activo provoca <b>hambruna</b> y por qué dos colas p1 <b>no compiten</b>.</p>
     </div>
     <div class="hud">
-      <div class="stat"><div class="v" id="hudLevel">1 / 2</div><div class="l">nivel</div></div>
+      <div class="stat"><div class="v" id="hudLevel">1 / 4</div><div class="l">nivel</div></div>
       <div class="stat"><div class="v" id="hudQueued">0</div><div class="l">en cola</div></div>
       <div class="stat"><div class="v" id="hudDone">0</div><div class="l">activados</div></div>
       <div class="stat"><div class="v" id="hudClock">0.0s</div><div class="l">reloj</div></div>
@@ -291,6 +291,8 @@
   <div class="lvlbar" role="tablist" aria-label="Niveles">
     <button class="lvl active" id="lvl-inversion" data-level="0">1 · Inversión</button>
     <button class="lvl" id="lvl-cero" data-level="1">2 · El cero traicionero</button>
+    <button class="lvl" id="lvl-hambruna" data-level="2">3 · Hambruna</button>
+    <button class="lvl" id="lvl-independencia" data-level="3">4 · Independencia</button>
   </div>
 
   <section class="arch" aria-labelledby="archTitle">
@@ -627,6 +629,26 @@
     for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
     return true;
   }
+  function tiedOf() {
+    return (G.level && G.level.goal && G.level.goal.tied) || [];
+  }
+  /**
+   * Compara dos órdenes permitiendo que los jobs empatados (misma prioridad y
+   * mismo tick de arranque) aparezcan en cualquier posición relativa.
+   * `b` es la referencia: en las posiciones donde b tiene un job empatado,
+   * `a` debe tener otro job del mismo grupo.
+   */
+  function sameOrderWithTies(a, b, tied) {
+    if (!a || !b || a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (tied && tied.length && tied.indexOf(b[i]) >= 0) {
+        if (tied.indexOf(a[i]) < 0) return false;
+      } else if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
   function hexA(hex, a) {
     var h = String(hex).replace("#", "");
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
@@ -747,8 +769,13 @@
   }
 
   function buildEngine() {
-    var eng = new Sim.Engine({ queueName: G.level.queueName, concurrency: 1, attempts: 1 });
-    G.level.jobs.forEach(function (job) {
+    var eng = new Sim.Engine({
+      queueName: G.level.queueName,
+      concurrency: G.level.concurrency || 1,
+      attempts: 1
+    });
+
+    function add(job) {
       eng.addJob({
         id: job.id,
         name: job.name,
@@ -756,7 +783,18 @@
         priority: priorityFor(job),
         work: job.work
       });
+    }
+
+    // Los jobs marcados enqueueAfterStart llegan DESPUÉS de que el worker
+    // haya tomado el primer job. Así se modela un lote que ya está activo.
+    var early = [];
+    var late = [];
+    G.level.jobs.forEach(function (job) {
+      (job.enqueueAfterStart ? late : early).push(job);
     });
+    early.forEach(add);
+    if (G.level.preStep) eng.step();
+    late.forEach(add);
     return eng;
   }
 
@@ -940,7 +978,7 @@
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = C.ink;
     ctx.font = "600 12.5px 'JetBrains Mono', monospace";
-    ctx.fillText("bull:email-despacho:" + zone, r.x + 18, r.y + 26);
+    ctx.fillText("bull:" + ((G.level && G.level.queueName) || "email-despacho") + ":" + zone, r.x + 18, r.y + 26);
 
     var label = zone === "wait" ? "LIST" : "ZSET";
     ctx.font = "500 9.5px 'JetBrains Mono', monospace";
@@ -1000,20 +1038,29 @@
     var r = PANEL.worker;
     panelBg(r);
 
+    var slots = (G.level && G.level.concurrency) || 1;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = C.ink2;
     ctx.font = "600 10px 'JetBrains Mono', monospace";
-    ctx.fillText("WORKER · concurrency 1", r.x + 18, r.y + 22);
+    ctx.fillText("WORKER · concurrency " + slots, r.x + 18, r.y + 22);
     ctx.fillStyle = C.muted;
     ctx.font = "11px 'Outfit', sans-serif";
-    ctx.fillText("moveToActive elige la zona y activa un job", r.x + 18, r.y + 40);
+    ctx.fillText(
+      slots > 1
+        ? slots + " workers independientes toman jobs a la vez"
+        : "moveToActive elige la zona y activa un job",
+      r.x + 18, r.y + 40
+    );
 
     var active = G.engine ? G.engine.active : [];
     if (active.length) {
-      active.forEach(function (entry) {
+      var slotH = active.length > 1 ? 84 : 66;
+      active.forEach(function (entry, i) {
         var job = G.engine.jobs[entry.id];
-        drawCard(r.x + 16, r.y + 56, r.w - 32, 66, job, {
+        var y = r.y + 56 + i * (slotH + 10);
+        if (y + slotH > r.y + r.h - 8) slotH = 58;
+        drawCard(r.x + 16, r.y + 56 + i * (slotH + 10), r.w - 32, slotH, job, {
           zone: (job && job.priority > 0) ? "prio" : "wait",
           active: true,
           progress: entry.total > 0 ? 1 - entry.workLeft / entry.total : 1
@@ -1115,10 +1162,19 @@
     $("missionTitle").textContent = G.level.name;
     $("missionBadge").textContent = "Nivel " + G.level.number;
     $("missionText").innerHTML = G.level.intro.map(esc).join(" ") +
-      ' <span class="note" style="display:block;margin-top:7px">Para aislar la regla, los jobs comparten una sola cola: <code>bull:email-despacho</code>. El nombre de cada job conserva su cola de origen en api-movies.</span>';
-    $("missionGoal").innerHTML = G.level.mode === "tune"
-      ? '<span class="note" style="margin:0">Orden objetivo:</span>' + goalList(G.level.goal.order)
+      ' <span class="note" style="display:block;margin-top:7px">' +
+      (G.level.queueNote ||
+        'Para aislar la regla, los jobs comparten una sola cola: <code>bull:' +
+          esc(G.level.queueName) +
+          '</code>. El nombre de cada job conserva su cola de origen en api-movies.') +
+      '</span>';
+    var goalNote = G.level.mode === "tune"
+      ? '<span class="note" style="margin:0">Orden objetivo:</span>'
       : '<span class="note" style="margin:0">Predice tú el orden de activación.</span>';
+    if (G.level.goal && G.level.goal.hint) {
+      goalNote += ' <span class="note" style="display:block;margin-top:4px">' + esc(G.level.goal.hint) + '</span>';
+    }
+    $("missionGoal").innerHTML = goalNote + (G.level.mode === "tune" ? goalList(G.level.goal.order) : "");
   }
 
   function renderDials() {
@@ -1192,6 +1248,15 @@
     return rows;
   }
 
+  function jobMark(id) {
+    if (!G.engine) return "";
+    var active = false;
+    G.engine.active.forEach(function (entry) { if (entry.id === id) active = true; });
+    if (active) return " · activo";
+    if (G.engine.processingOrder.indexOf(id) >= 0) return " · ya salió";
+    return "";
+  }
+
   function renderScore() {
     var body = $("scoreBody");
     if (!G.engine) { body.innerHTML = '<p class="note" style="margin:0">Sin jobs.</p>'; return; }
@@ -1203,17 +1268,15 @@
       html += '<p class="note" style="margin:0 0 6px">Sin jobs priorizados.</p>';
     }
     prio.forEach(function (row, i) {
-      var done = G.engine.processingOrder.indexOf(row.id) >= 0;
       html += '<div class="score-row">';
-      html += '<span class="nm">' + (i + 1) + ". " + esc(row.job.name) + (done ? " · ya salió" : "") + '</span><span class="sc">p' + row.priority + '</span>';
+      html += '<span class="nm">' + (i + 1) + ". " + esc(row.job.name) + jobMark(row.id) + '</span><span class="sc">p' + row.priority + '</span>';
       html += '<span class="fm">' + row.priority + " × 2³² + " + row.seq + " = " + row.score + '</span>';
       html += '</div>';
     });
     if (waits.length) {
       html += '<div class="sg-head" style="margin-top:8px"><span>LIST wait · p0</span><span>sale antes</span></div>';
       waits.forEach(function (row) {
-        var done = G.engine.processingOrder.indexOf(row.id) >= 0;
-        html += '<div class="score-row"><span class="nm">' + esc(row.job.name) + (done ? " · ya salió" : "") + '</span><span class="sc">p0</span><span class="fm">sin prioridad → wait (RPOPLPUSH)</span></div>';
+        html += '<div class="score-row"><span class="nm">' + esc(row.job.name) + jobMark(row.id) + '</span><span class="sc">p0</span><span class="fm">sin prioridad → wait (RPOPLPUSH)</span></div>';
       });
     }
     body.innerHTML = html;
@@ -1967,11 +2030,13 @@
     G.phase = "done";
     var actual = G.engine.processingOrder.slice();
     var goal = G.level.goal.order;
+    var tied = tiedOf();
     G.result = {
       actual: actual,
       goal: goal,
-      orderOk: eq(actual, goal),
-      predOk: eq(G.prediction, actual)
+      tied: tied,
+      orderOk: sameOrderWithTies(actual, goal, tied),
+      predOk: sameOrderWithTies(G.prediction, actual, tied)
     };
     updateControls();
     updateAll();
@@ -1979,13 +2044,14 @@
     startFxLoop();
   }
 
-  function orderColumn(title, ids, compareWith) {
+  function orderColumn(title, ids, compareWith, tied) {
     var html = '<div class="order-col"><h4>' + esc(title) + '</h4><ol class="order">';
     ids.forEach(function (id, i) {
       var job = nameOf(id);
       var cls = "";
       if (compareWith) {
-        cls = compareWith[i] === id ? "ok" : "miss";
+        var bothTied = tied && tied.indexOf(id) >= 0 && tied.indexOf(compareWith[i]) >= 0;
+        cls = bothTied ? "ok" : (compareWith[i] === id ? "ok" : "miss");
       }
       html += '<li class="' + cls + '"><span class="n">' + (i + 1) + '</span>' + esc(job ? job.name : id) + '</li>';
     });
@@ -2000,12 +2066,14 @@
     html += '<span class="eyebrow">Nivel ' + G.level.number + ' · ' + esc(G.level.name) + '</span>';
     html += '<h2>' + (success ? 'Lo <em>resolviste</em>' : 'Vuelve a <em>intentar</em>') + '</h2>';
     html += '<p class="ov-lede">' + (success
-      ? 'El orden coincide con lo que BullMQ haría de verdad: primero <code>wait</code> (LIST) y después <code>prioritized</code> (ZSET) por menor score.'
+      ? (r.tied && r.tied.length
+        ? 'Correcto: los jobs empatados arrancan juntos y el resto respeta la prioridad real del motor.'
+        : 'El orden coincide con lo que BullMQ haría de verdad: primero <code>wait</code> (LIST) y después <code>prioritized</code> (ZSET) por menor score.')
       : 'Ese no es el orden real del motor. Revisa la regla y prueba otra vez.') + '</p>';
 
     html += '<div class="order-grid">';
     if (G.level.mode === "predict") {
-      html += orderColumn("Tu predicción", r.actual.length ? G.prediction : [], r.actual);
+      html += orderColumn("Tu predicción", r.actual.length ? G.prediction : [], r.actual, r.tied);
       html += orderColumn("Orden real del motor", r.actual, null);
     } else {
       html += orderColumn("Orden real del motor", r.actual, r.goal);
@@ -2065,9 +2133,9 @@
       b.classList.toggle("active", parseInt(b.getAttribute("data-level"), 10) === G.levelIndex);
     });
 
-    $("hint").textContent = G.level.mode === "tune"
-      ? "Nivel 1: ajusta los diales y pulsa Simular."
-      : "Nivel 2: haz clic en los jobs para predecir y pulsa Simular.";
+    $("hint").textContent = G.level.hint || (G.level.mode === "tune"
+      ? "Ajusta los diales y pulsa Simular."
+      : "Haz clic en los jobs para predecir y pulsa Simular.");
   }
 
   /* ================================================================== */

@@ -8,6 +8,8 @@
  *   - motor: dentro del ZSET gana el MENOR score (menor número = más prioridad)
  *   - niveles: Inversión (diales) reproduce el bug y su arreglo
  *   - niveles: El cero traicionero hace salir primero al priority 0
+ *   - niveles: Hambruna demuestra que la prioridad no expropia un job activo
+ *   - niveles: Independencia demuestra que dos colas p1 no compiten
  *   - HTML: ids, scripts, tema claro/oscuro y glosario citado
  *   - visual: mapa de componentes, cuatro gráficas, pasos add→completed y checklist
  *
@@ -41,8 +43,11 @@ function check(name, fn) {
 }
 
 function runLevel(level, priorities) {
-  const engine = new Sim.Engine({ queueName: level.queueName, concurrency: 1 });
-  level.jobs.forEach((job) => {
+  const engine = new Sim.Engine({
+    queueName: level.queueName,
+    concurrency: level.concurrency || 1
+  });
+  const add = (job) => {
     const priority = priorities ? priorities[job.id] : job.priority;
     engine.addJob({
       id: job.id,
@@ -51,9 +56,30 @@ function runLevel(level, priorities) {
       priority: priority,
       work: job.work
     });
+  };
+  const early = [];
+  const late = [];
+  level.jobs.forEach((job) => {
+    (job.enqueueAfterStart ? late : early).push(job);
   });
+  early.forEach(add);
+  if (level.preStep) engine.step();
+  late.forEach(add);
   engine.runToIdle();
   return engine;
+}
+
+/** Misma tolerancia de empates que usa la UI para el nivel 4. */
+function sameOrderWithTies(a, b, tied) {
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (tied && tied.length && tied.indexOf(b[i]) >= 0) {
+      if (tied.indexOf(a[i]) < 0) return false;
+    } else if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /* ------------------------------------------------------------------ */
@@ -175,18 +201,23 @@ console.log("\n[3] Niveles: estructura y coherencia con la config");
 /* ------------------------------------------------------------------ */
 
 {
-  check("se entregan exactamente 2 niveles", () => {
-    assert.strictEqual(LEVELS.length, 2);
+  check("se entregan exactamente 4 niveles", () => {
+    assert.strictEqual(LEVELS.length, 4);
   });
 
-  check("los ids de nivel son inversion y cero", () => {
-    assert.deepStrictEqual(LEVELS.map((l) => l.id), ["inversion", "cero"]);
-    assert.deepStrictEqual(LEVELS.map((l) => l.number), [1, 2]);
+  check("los ids de nivel son inversion, cero, hambruna e independencia", () => {
+    assert.deepStrictEqual(
+      LEVELS.map((l) => l.id),
+      ["inversion", "cero", "hambruna", "independencia"]
+    );
+    assert.deepStrictEqual(LEVELS.map((l) => l.number), [1, 2, 3, 4]);
   });
 
-  check("los modos son tune (1) y predict (2)", () => {
-    assert.strictEqual(LEVELS[0].mode, "tune");
-    assert.strictEqual(LEVELS[1].mode, "predict");
+  check("los modos son tune (1) y predict (2, 3 y 4)", () => {
+    assert.deepStrictEqual(
+      LEVELS.map((l) => l.mode),
+      ["tune", "predict", "predict", "predict"]
+    );
   });
 
   check("las prioridades editables son las reales {1,3,5,10}", () => {
@@ -233,6 +264,17 @@ console.log("\n[3] Niveles: estructura y coherencia con la config");
       level.goal.order.forEach((id) => {
         assert.ok(ids.indexOf(id) >= 0, "objetivo con id desconocido: " + id);
       });
+      (level.goal.tied || []).forEach((id) => {
+        assert.ok(ids.indexOf(id) >= 0, "empatado desconocido: " + id);
+        assert.ok(level.goal.order.indexOf(id) >= 0, "empatado fuera del objetivo: " + id);
+      });
+    });
+  });
+
+  check("cada nivel trae su pista y su checklist", () => {
+    LEVELS.forEach((level) => {
+      assert.ok(typeof level.hint === "string" && level.hint.length > 10, "falta hint en " + level.id);
+      assert.ok(Array.isArray(level.observe) && level.observe.length >= 3, "falta observe en " + level.id);
     });
   });
 }
@@ -326,7 +368,110 @@ console.log("\n[5] Nivel 2 «El cero traicionero»: priority 0 sale antes");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n[6] HTML: estructura, scripts y controles");
+console.log("\n[6] Nivel 3 «Hambruna»: la prioridad no expropia el job activo");
+/* ------------------------------------------------------------------ */
+
+{
+  const level = LEVELS[2];
+
+  check("el primer lote está marcado para activarse antes de que lleguen los demás", () => {
+    const first = level.jobs.find((j) => j.preActivate);
+    assert.ok(first, "falta un job preActivate");
+    assert.strictEqual(first.id, "recs-recompute-all-1");
+    assert.strictEqual(level.preStep, true);
+    assert.strictEqual(
+      level.jobs.filter((j) => j.enqueueAfterStart).length,
+      2
+    );
+  });
+
+  check("el motor confirma el orden declarado (lote → usuario → lote 2)", () => {
+    const engine = runLevel(level);
+    assert.deepStrictEqual(engine.processingOrder, level.goal.order);
+  });
+
+  check("el lote 1 se activa en el tick 1, antes que los otros dos", () => {
+    const engine = runLevel(level);
+    const active = engine.events.filter((e) => e.kind === "active");
+    assert.strictEqual(active[0].jobId, "recs-recompute-all-1");
+    assert.strictEqual(active[0].tick, 1);
+  });
+
+  check("recompute-user (p1) espera ~9 s porque el worker está ocupado", () => {
+    const engine = runLevel(level);
+    const active = engine.events.filter((e) => e.kind === "active");
+    const batch = active.find((e) => e.jobId === "recs-recompute-all-1");
+    const user = active.find((e) => e.jobId === "recs-recompute-user");
+    assert.ok(user.tick - batch.tick >= 80, "el usuario no esperó al lote");
+  });
+
+  check("cuando el lote termina, el p1 sale antes que el segundo lote p10", () => {
+    const engine = runLevel(level);
+    const order = engine.processingOrder;
+    assert.ok(order.indexOf("recs-recompute-user") < order.indexOf("recs-recompute-all-2"));
+  });
+
+  check("la lección explica la hambruna y el job activo", () => {
+    assert.ok(/activo/i.test(level.lesson));
+    assert.ok(/hambruna/i.test(level.lesson));
+  });
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n[7] Nivel 4 «Independencia»: dos colas p1 no compiten");
+/* ------------------------------------------------------------------ */
+
+{
+  const level = LEVELS[3];
+
+  check("el nivel declara concurrency 2 (dos workers independientes)", () => {
+    assert.strictEqual(level.concurrency, 2);
+  });
+
+  check("los dos jobs p1 vienen de colas distintas", () => {
+    const tied = level.goal.tied || [];
+    assert.strictEqual(tied.length, 2);
+    const jobs = tied.map((id) => level.jobs.find((j) => j.id === id));
+    jobs.forEach((job) => assert.strictEqual(job.priority, 1));
+    assert.notStrictEqual(jobs[0].queue, jobs[1].queue);
+  });
+
+  check("los dos p1 se activan en el MISMO tick", () => {
+    const engine = runLevel(level);
+    const active = engine.events.filter((e) => e.kind === "active");
+    const a = active.find((e) => e.jobId === "email-critical-verify");
+    const b = active.find((e) => e.jobId === "notification-fanout-review");
+    assert.ok(a && b, "faltan activaciones p1");
+    assert.strictEqual(a.tick, b.tick);
+  });
+
+  check("el p3 espera a que se libere un slot de worker", () => {
+    const engine = runLevel(level);
+    const active = engine.events.filter((e) => e.kind === "active");
+    const p1 = active.find((e) => e.jobId === "email-critical-verify");
+    const p3 = active.find((e) => e.jobId === "notification-inapp-welcome");
+    assert.ok(p3.tick > p1.tick, "el p3 no esperó");
+  });
+
+  check("el orden real deja el p3 al final y tolera el empate p1", () => {
+    const engine = runLevel(level);
+    const tied = level.goal.tied;
+    assert.strictEqual(engine.processingOrder[2], "notification-inapp-welcome");
+    assert.ok(tied.indexOf(engine.processingOrder[0]) >= 0);
+    assert.ok(tied.indexOf(engine.processingOrder[1]) >= 0);
+    assert.ok(sameOrderWithTies(engine.processingOrder, level.goal.order, tied));
+    const swapped = [engine.processingOrder[1], engine.processingOrder[0], engine.processingOrder[2]];
+    assert.ok(sameOrderWithTies(swapped, engine.processingOrder, tied), "el empate se rechazó");
+  });
+
+  check("la lección explica que las colas no compiten entre sí", () => {
+    assert.ok(/no compiten/i.test(level.lesson));
+    assert.ok(/worker/i.test(level.lesson));
+  });
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n[8] HTML: estructura, scripts y controles");
 /* ------------------------------------------------------------------ */
 
 {
@@ -342,7 +487,7 @@ console.log("\n[6] HTML: estructura, scripts y controles");
     "rule-zero", "rule-prio", "rule-wait",
     "scoreBody", "scoreStatus", "evtLog", "traceTick",
     "glossary",
-    "lvl-inversion", "lvl-cero"
+    "lvl-inversion", "lvl-cero", "lvl-hambruna", "lvl-independencia"
   ];
 
   requiredIds.forEach((id) => {
@@ -374,7 +519,7 @@ console.log("\n[6] HTML: estructura, scripts y controles");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n[7] HTML: tema claro/oscuro");
+console.log("\n[9] HTML: tema claro/oscuro");
 /* ------------------------------------------------------------------ */
 
 {
@@ -422,7 +567,7 @@ console.log("\n[7] HTML: tema claro/oscuro");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n[8] HTML: glosario y didáctica citada");
+console.log("\n[10] HTML: glosario y didáctica citada");
 /* ------------------------------------------------------------------ */
 
 {
@@ -462,7 +607,7 @@ console.log("\n[8] HTML: glosario y didáctica citada");
   });
 }
 
-console.log("\n[9] Capa visual: mapa, gráficas, pasos y checklist");
+console.log("\n[11] Capa visual: mapa, gráficas, pasos y checklist");
 
 /* ------------------------------------------------------------------ */
 
