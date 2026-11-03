@@ -1,0 +1,107 @@
+{
+  "source": {
+    "repo": "api-movies",
+    "file": "README.md",
+    "section": "Async jobs (BullMQ) · Data model · API endpoints",
+    "gameDoc": "2026-11-02-juegos-aprendizaje-bullmq-repo-api-movies.md",
+    "gameSection": "Juego 3 — Cascada",
+    "code": [
+      "config/bullmq.ts",
+      "jobs/notificationFanoutJob.ts",
+      "workers/notificationWorker.ts",
+      "queues/notificationQueue.ts",
+      "db/migrations (notifications)"
+    ]
+  },
+  "queues": [
+    {
+      "name": "notification-fanout",
+      "priority": 1,
+      "worker": "notificationWorker",
+      "stage": 1,
+      "role": "Etapa 1: recibe el evento de dominio y reparte entre los canales candidatos"
+    },
+    {
+      "name": "notification-inapp",
+      "priority": 3,
+      "worker": "notificationWorker",
+      "stage": 2,
+      "role": "Etapa 2 · canal in-app: persiste la notificación en la tabla notifications"
+    },
+    {
+      "name": "email-transactional",
+      "priority": 5,
+      "worker": "emailWorker",
+      "stage": 2,
+      "role": "Etapa 2 · canal email: envía el aviso por correo"
+    }
+  ],
+  "priorityRule": {
+    "order": "menor numero sale antes",
+    "scope": "la prioridad ordena DENTRO de una cola; dos colas distintas no compiten entre si",
+    "noPriority": "priority 0 significa sin prioridad explicita"
+  },
+  "event": {
+    "name": "review.published",
+    "queue": "notification-fanout",
+    "jobName": "notification:fanout",
+    "jobIdTemplate": "review-published-<movieId>-<reviewerId>",
+    "jobIdRule": "el jobId no puede contener ':' (BullMQ lanza Custom Id cannot contain :)"
+  },
+  "channels": [
+    {
+      "id": "email",
+      "queue": "email-transactional",
+      "preference": "notify_email",
+      "persists": false
+    },
+    {
+      "id": "inapp",
+      "queue": "notification-inapp",
+      "preference": "notify_inapp",
+      "persists": true
+    }
+  ],
+  "preferences": {
+    "table": "user_settings",
+    "columns": [
+      "notify_email",
+      "notify_inapp"
+    ],
+    "rule": "si el usuario apago el canal, el fan-out no debe encolar ese canal"
+  },
+  "persistence": {
+    "table": "notifications",
+    "uniqueConstraint": "UNIQUE (user_id, type, dedupe_key)",
+    "insert": "INSERT IGNORE",
+    "type": "review.published",
+    "behavior": "si la fila ya existe, el INSERT IGNORE no inserta nada y el trabajo termina bien",
+    "dedupeKeyTemplates": {
+      "porEvento": "review-<movieId>-<userId>",
+      "porUsuario": "review-<userId>",
+      "fijo": "review"
+    }
+  },
+  "jobIdTemplates": {
+    "porEvento": "notif-review-<movieId>-<userId>",
+    "porEmision": "notif-review-<userId>-<n>",
+    "fijo": "notif-review"
+  },
+  "timing": {
+    "note": "valores pedagogicos del simulador, no del API: el API no define tiempos de trabajo",
+    "tickMs": 100,
+    "fanoutCost": 400,
+    "channelCost": 300,
+    "emailCost": 600
+  },
+  "scoring": {
+    "notificationDelivered": 60,
+    "emailDelivered": 30,
+    "duplicateIgnored": 40,
+    "jobIdDeduplicated": 40,
+    "emailDuplicate": -60,
+    "emailUnwanted": -50,
+    "notificationLost": -80,
+    "levelBonus": 50
+  }
+}
